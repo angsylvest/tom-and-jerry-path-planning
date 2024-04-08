@@ -18,6 +18,7 @@ class TomAndJerry:
         self.size = 0.5
         self.distance_refuge = 0.7
         self.max_distance = 10 
+        self.size = 0.5
 
         self.current_pos = current_pos
         self.goal_pos = goal_pos
@@ -51,7 +52,7 @@ class TomAndJerry:
         max_risk = 2.3
 
         probability = specific_class_probability
-        severity = (0.3304 * self.obstacle_velocity) + (0.2957 * size) + (0.3739 * self.distance_refuge)
+        severity = (0.3304 * self.obstacle_velocity) + (0.2957 * self.size) + (0.3739 * self.distance_refuge)
         print("Severity Value:", severity)
 
         total_risk = probability * severity
@@ -153,7 +154,7 @@ class TomAndJerry:
         return proximity
     
 
-    def is_isolated_or_clustered(nodes, current_node):
+    def is_isolated_or_clustered(self, nodes, current_node):
         # Get the neighboring nodes of the current node
         neighbors = [node for node in nodes if node != current_node]
 
@@ -192,7 +193,7 @@ class TomAndJerry:
 
         return d_max
 
-    def calc_fid(self, line1_points, intersection_point, radians, X_train, y_train, X_test, nodes, current_node, F, w, n, f, m, coord1, coord2):
+    def calc_fid(self, line1_points, intersection_point, radians, X_train, y_train, X_test, current_node, obst_pose, F=0.3, w=0.9, n=1, f=0, m=1):
         # TODO: explain this info and where it is coming from .. 
 
         #initalize dictionary
@@ -203,7 +204,8 @@ class TomAndJerry:
         #once detection is complete start risk analysis
         #split list in half and begin to append positions
         before_intersection, after_intersection = self.list_splice(line1_points, intersection_point)
-        sorted_ranges = self.sort_into_8_ranges(radians)
+        sorted_ranges = self.sort_into_8_ranges(radians) # TODO: what are sorted ranges? what are they here for? 
+        
         print(sorted_ranges)
         #for each sector of the obstacle's movement
         # for sector in keys:
@@ -211,7 +213,7 @@ class TomAndJerry:
             predicted_class, specific_class_probability, severity, total_risk, c = self.update_bayes_model(X_train, y_train, X_test)
             proximity_value = self.proximity_to_goal(self.current_pos, self.goal_pos, self.max_distance)
 
-            result = self.is_isolated_or_clustered(nodes, current_node)
+            result = self.is_isolated_or_clustered(line1_points, current_node) # TODO: what is this? 
             #b is equal to Benefit
             B = result[1] + proximity_value
             print(B)
@@ -224,7 +226,7 @@ class TomAndJerry:
 
         print("Dictionary with optimized radius values:", sector_dict)
 
-        distance = euclidean_distance(coord1, coord2)
+        distance = euclidean_distance(current_node, obst_pose)
         print("Distance:", distance)
         return sector_dict, distance
     
@@ -241,10 +243,26 @@ def main():
 
     # begin by generating a* path using fully connected graph 
     path_generator = TomAndJerry(env=env, current_pos=start_pos, goal_pos=goal_pos)
-    print(f'a* path: {path_generator.a_star_path()}')
+    curr_path = path_generator.a_star_path()
+    print(f'a* path: {curr_path}')
 
     # calculate fid if encounter obs 
-    sector, dist = path_generator.calc_fid()
+    radians = [0.785398, 1.5708, 2.35619, 3.14159, 3.92699, 4.71239, 5.49779, 6.28319]
+    X_train = np.array([[0, 3, 4, 0, 2],
+                    [0, 1, 4, 0, 2],
+                    [0, 3, 4, 0, 2],
+                    [0, 3, 4, 0, 2],
+                    [0, 3, 4, 0, 2]])
+    y_train = np.array(['yes', 'no', 'yes', 'yes', 'no'])
+    X_test = np.array([[0, 3, 4, 0, 2]])
+
+    obs_pose = (3,4)
+    sector, dist = path_generator.calc_fid(curr_path, (0.2, 0.4), radians, X_train, y_train, X_test, start_pos, obs_pose) # inputs: current path, 
+    print(f'calc fid output: {sector, dist}')
+
+    # create path based on location of obstacle and other info ..
+    # TODO: where is this info? 
+
 
 
 main()
