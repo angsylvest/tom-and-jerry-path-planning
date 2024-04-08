@@ -5,7 +5,7 @@ sceneTreePerspectives: 000000ff00000001000000030000001c000000c0000000fa010000000
 maximizedDockId: -1
 centralWidgetVisible: 1
 orthographicViewHeight: 1
-textFiles: 3 "controllers/my_controller/my_controller.py" "controllers/d_star_lite/d_star_lite.py" "controllers/my_controller_two/my_controller_two.py" "controllers/tom_and_jerry/tom_and_jerry.py"
+textFiles: 8 "controllers/my_controller/my_controller.py" "controllers/d_star_lite/d_star_lite.py" "controllers/my_controller_two/my_controller_two.py" "controllers/tom_and_jerry/tom_and_jerry.py" "controllers/tom_and_jerry_supervisor/tom_and_jerry_supervisor.py" "controllers/life_long_a_star/life_long_a_star.py" "controllers/lifelong_a_supervisor/lifelong_a_supervisor.py" "controllers/d_star_lite_controller/d_star_lite_controller.py" "controllers/d_star_lite_supervisor/d_star_lite_supervisor.py"
 consoles: Console:All:All
 renderingDevicePerspectives: e-puck(1):camera;1;1;0;0
 renderingDevicePerspectives: e-puck:camera;1;1;0;0
