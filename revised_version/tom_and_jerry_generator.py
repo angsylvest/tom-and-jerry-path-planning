@@ -27,6 +27,42 @@ class TomAndJerry:
 
     def a_star_path(self, obstacle_pos = []):
         return dynamic_a_star(self.env, self.current_pos, self.goal_pos, obstacle_pos)
+    
+    def update_bayes_model(self, x_train, y_train, x_test):
+        # Create an instance of MultinomialNaiveBayes
+        #getting grasph of probability componenet
+        model = MultinomialNaiveBayes()
+
+        # Train the model with training data
+        model.fit(x_train, y_train)
+
+        # Get class probabilities for test data
+        class_probabilities = model.predict_proba(x_test)
+        print("Class probabilities for test data:", class_probabilities)
+
+        # Get predicted class for test data
+        predicted_class = model.predict(x_test)
+        print("Predicted class for test data:", predicted_class)
+
+        specific_class_probability = class_probabilities[0][self.class_index]
+        print(f"Probability for class {model.classes_[self.class_index]}:", specific_class_probability)
+
+        #maximum amount of risk potential in e-puck robot (caluclations of speed potential, etc)
+        max_risk = 2.3
+
+        probability = specific_class_probability
+        severity = (0.3304 * self.obstacle_velocity) + (0.2957 * size) + (0.3739 * self.distance_refuge)
+        print("Severity Value:", severity)
+
+        total_risk = probability * severity
+        print("Total Risk:", total_risk)    
+
+        #calculate c, B, and find optimized radius
+        c = (max_risk - total_risk) / 10
+        print("c value:", c)
+
+        return predicted_class, specific_class_probability, severity, total_risk, c
+
 
     def reroute(self): # obstacle encountered
         pass 
@@ -156,14 +192,13 @@ class TomAndJerry:
 
         return d_max
 
-    def main(self, detection, line1_points, intersection_point, radians, X_train, y_train, X_test, obstacle_velocity, size, distance_refuge, nodes, current_node, F, w, n, f, m, coord1, coord2):
+    def calc_fid(self, line1_points, intersection_point, radians, X_train, y_train, X_test, nodes, current_node, F, w, n, f, m, coord1, coord2):
+        # TODO: explain this info and where it is coming from .. 
 
         #initalize dictionary
         sector_dict = {}
         # List of ranges as strings
         # keys = ['0-45', '45-90', '90-135', '135-180', '180-225', '225-270', '270-315', '315-360']
-
-
 
         #once detection is complete start risk analysis
         #split list in half and begin to append positions
@@ -173,39 +208,7 @@ class TomAndJerry:
         #for each sector of the obstacle's movement
         # for sector in keys:
         for i in range(8):
-                # Create an instance of MultinomialNaiveBayes
-                #getting grasph of probability componenet
-            model = MultinomialNaiveBayes()
-
-            # Train the model with training data
-            model.fit(X_train, y_train)
-
-            # Get class probabilities for test data
-            class_probabilities = model.predict_proba(X_test)
-            print("Class probabilities for test data:", class_probabilities)
-
-            # Get predicted class for test data
-            predicted_class = model.predict(X_test)
-            print("Predicted class for test data:", predicted_class)
-
-            specific_class_probability = class_probabilities[0][self.class_index]
-            print(f"Probability for class {model.classes_[self.class_index]}:", specific_class_probability)
-
-            #maximum amount of risk potential in e-puck robot (caluclations of speed potential, etc)
-            max_risk = 2.3
-
-            probability = specific_class_probability
-            severity = (0.3304 * obstacle_velocity) + (0.2957 * size) + (0.3739 * distance_refuge)
-            print("Severity Value:", severity)
-
-            total_risk = probability * severity
-            print("Total Risk:", total_risk)    
-
-            #calculate c, B, and find optimized radius
-
-            c = (max_risk - total_risk) / 10
-            print("c value:", c)
-
+            predicted_class, specific_class_probability, severity, total_risk, c = self.update_bayes_model(X_train, y_train, X_test)
             proximity_value = self.proximity_to_goal(self.current_pos, self.goal_pos, self.max_distance)
 
             result = self.is_isolated_or_clustered(nodes, current_node)
@@ -240,7 +243,8 @@ def main():
     path_generator = TomAndJerry(env=env, current_pos=start_pos, goal_pos=goal_pos)
     print(f'a* path: {path_generator.a_star_path()}')
 
-    
+    # calculate fid if encounter obs 
+    sector, dist = path_generator.calc_fid()
 
 
 main()
