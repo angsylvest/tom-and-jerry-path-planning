@@ -247,6 +247,7 @@ def main():
     print(f'a* path: {curr_path}')
 
     # calculate fid if encounter obs 
+    # TODO: what is this info? 
     radians = [0.785398, 1.5708, 2.35619, 3.14159, 3.92699, 4.71239, 5.49779, 6.28319]
     X_train = np.array([[0, 3, 4, 0, 2],
                     [0, 1, 4, 0, 2],
