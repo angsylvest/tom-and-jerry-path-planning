@@ -69,3 +69,5 @@ def dynamic_a_star(env, start_pos, goal_pos, obstacle_pos):
 
     return None  # No path found
 
+
+# relevant metrics to add here: path taken, time to goal, etc
