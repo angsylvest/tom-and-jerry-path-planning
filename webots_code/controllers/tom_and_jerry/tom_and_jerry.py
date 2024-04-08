@@ -123,7 +123,7 @@ while robot.step(timestep) != -1:
 
     if path:
         print("Path found:", path)
-        if obj_detected:
+        if obj_detected: # not actually using obstacle data yet .. 
             # calc fid + evolving waypoints 
             radians = [0.785398, 1.5708, 2.35619, 3.14159, 3.92699, 4.71239, 5.49779, 6.28319]
             X_train = np.array([[0, 3, 4, 0, 2],
@@ -138,10 +138,12 @@ while robot.step(timestep) != -1:
             sector_dict, dist = path_generator.calc_fid(path, (0.2, 0.4), radians, X_train, y_train, X_test, start_pos, obs_pose) # inputs: current path, 
             tangent_start, tangent_end, marked_coordinates = get_circle_paths_and_coordinates(obs_pose, dist, start_pos, goal_pos) # FID radius, center is where obstacle is 
             currx, curry = marked_coordinates[evolving_waypoint_index]
+            currx = round(currx, 2)
+            curry = round(curry, 2)
             evolving_waypoint_index += 1 
             evolving = True 
-            if distance < sector_dict:
-                move_forward()
+            # if distance < sector_dict:
+            #     move_forward()
             
     
         if math.dist([robot_current_posx, robot_current_posy], [example_goal_posex, goal_posey]) > 0.05 and yaw != round(math.atan2(goal_posey-robot_current_posy,example_goal_posex-robot_current_posx),2): 

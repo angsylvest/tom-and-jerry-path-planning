@@ -120,9 +120,14 @@ while robot.step(timestep) != -1:
     if path:
         print("Path found:", path)
         if obj_detected:
+            grid_rep = [
+                [0,0,0],
+                [0,0,0],
+                [0,0,0]
+            ]
+
             path = LifelongAStar(grid_rep).lifelong_astar(start, goal)
-
-
+            j = 0 
             if not goal_reached:
                 robot_current_posx, robot_current_posy  = float(gps.getValues()[0]), float(gps.getValues()[1])
             
@@ -135,8 +140,15 @@ while robot.step(timestep) != -1:
 
             stop()
             goal_reached = True
+
+        else: 
+            # Emily: here it stops, but you can just update the goal pose here if you have a list
+            if j + 1 < len(path):
+                example_goal_posex, goal_posey = path[j + 1]
+                goal_reached = False
+                j+= 1
      
-  
+
         if yaw != chosen_direction and not goal_reached: 
             begin_rotating()
                     
