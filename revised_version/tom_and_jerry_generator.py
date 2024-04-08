@@ -9,6 +9,7 @@ from utility_func import *
 from grid_environment import * 
 from multi_bayes import * 
 from grid_environment import * 
+from evolving_waypoint import * 
 
 class TomAndJerry: 
 
@@ -228,17 +229,21 @@ class TomAndJerry:
 
         distance = euclidean_distance(current_node, obst_pose)
         print("Distance:", distance)
-        return sector_dict, distance
+        return sector_dict, distance, after_intersection
     
+    def generate_waypoints(self, obs_pose, dist, start_pos, goal_pos ): 
+        tangent_start, tangent_end, marked_coordinates = get_circle_paths_and_coordinates(obs_pose, dist, start_pos, goal_pos) # FID radius, center is where obstacle is 
+        return tangent_start, tangent_end, marked_coordinates
+
 
 # need steps that were taken to generate path .. 
 
 def main():
     # generating example path here .. 
     start_pos = (0,0)
-    goal_pos = (1,1)
+    goal_pos = (5,5)
 
-    env = TomAndJerryEnvironment(dims = (5,5), upper_left=(-1,1)) 
+    env = TomAndJerryEnvironment(dims = (10,10), upper_left=(-1,1)) 
     # print(f'discretized env: {env}')
 
     # begin by generating a* path using fully connected graph 
@@ -246,7 +251,7 @@ def main():
     curr_path = path_generator.a_star_path()
     print(f'a* path: {curr_path}')
 
-    # calculate fid if encounter obs 
+    # --- calculate fid if encounter obs ----- 
     # TODO: what is this info? 
     radians = [0.785398, 1.5708, 2.35619, 3.14159, 3.92699, 4.71239, 5.49779, 6.28319]
     X_train = np.array([[0, 3, 4, 0, 2],
@@ -257,13 +262,14 @@ def main():
     y_train = np.array(['yes', 'no', 'yes', 'yes', 'no'])
     X_test = np.array([[0, 3, 4, 0, 2]])
 
-    obs_pose = (3,4)
+    obs_pose = (3,3)
     sector, dist = path_generator.calc_fid(curr_path, (0.2, 0.4), radians, X_train, y_train, X_test, start_pos, obs_pose) # inputs: current path, 
     print(f'calc fid output: {sector, dist}')
 
     # create path based on location of obstacle and other info ..
     # TODO: where is this info? 
+    tangent_start, tangent_end, marked_coordinates = get_circle_paths_and_coordinates(obs_pose, dist, start_pos, goal_pos) # FID radius, center is where obstacle is 
+    print(f'evolving waypoint generated around obstacle: {marked_coordinates}')
 
 
-
-main()
+# main()
