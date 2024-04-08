@@ -42,8 +42,14 @@ leftMotor = robot.getDevice('left wheel motor')
 rightMotor = robot.getDevice('right wheel motor')
 leftMotor.setVelocity(0)
 rightMotor.setVelocity(0)
- 
-coordinates = path
+
+start = (0, 0)
+goal = (10, 10)
+#static obstalces
+obstacles = [(2, 2), (3, 3), (4, 4), (5, 5)]  # Example obstacle positions
+obj_detected = False 
+
+coordinates = path_generator.a_star_path()
 j = 0
 
 # example of a goal pose (if you are using a cell, would need to find pos within that cell) 
@@ -57,11 +63,6 @@ STEP_SIZE = 1.0  # Step size for discretization
 OBSTACLE_COST = float('inf')  # Cost for grid cells with obstacles
 GOAL_TOLERANCE = 0.5  # Tolerance for reaching the goal
    
-start = (0, 0)
-goal = (10, 10)
-#static obstalces
-obstacles = [(2, 2), (3, 3), (4, 4), (5, 5)]  # Example obstacle positions
-obj_detected = False 
 
 # function to help with movement 
 def begin_rotating():
@@ -112,6 +113,8 @@ i = 0
 while robot.step(timestep) != -1:
     roll, pitch, yaw = inertia.getRollPitchYaw()
     yaw = round(yaw, 2)
+    if not goal_reached:
+        robot_current_posx, robot_current_posy  = float(gps.getValues()[0]), float(gps.getValues()[1])
 
     # initially create path from A* 
     if i == 0: 
@@ -139,10 +142,6 @@ while robot.step(timestep) != -1:
             evolving = True 
             if distance < sector_dict:
                 move_forward()
-
-
-            if not goal_reached:
-                robot_current_posx, robot_current_posy  = float(gps.getValues()[0]), float(gps.getValues()[1])
             
     
         if math.dist([robot_current_posx, robot_current_posy], [example_goal_posex, goal_posey]) > 0.05 and yaw != round(math.atan2(goal_posey-robot_current_posy,example_goal_posex-robot_current_posx),2): 

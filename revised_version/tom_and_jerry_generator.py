@@ -5,6 +5,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from math import sqrt
 
+import sys 
+sys.path.append('../../../revised_version')
+
 from utility_func import * 
 from grid_environment import * 
 from multi_bayes import * 

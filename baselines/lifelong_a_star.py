@@ -1,4 +1,6 @@
 import heapq
+import sys 
+sys.path.append('../../../')
 
 class LifelongAStar:
     def __init__(self, grid):
