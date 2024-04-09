@@ -15,6 +15,8 @@ import sys
 sys.path.append('../../../')
 
 from baselines.lifelong_a_star import * 
+# using bc already has an occupancy grid 
+from baselines.simplified_d_star_lite.grid import * 
 
 
 # create the Robot instance.
@@ -37,33 +39,41 @@ rightMotor = robot.getDevice('right wheel motor')
 leftMotor.setVelocity(0)
 rightMotor.setVelocity(0)
  
-coordinates = path
+# coordinates = path
 j = 0
 
 # example of a goal pose (if you are using a cell, would need to find pos within that cell) 
-example_goal_posex, goal_posey = coordinates[0] #change to first index of the route list
+# example_goal_posex, goal_posey = coordinates[0] #change to first index of the route list
 goal_reached = False 
 forward_speed = 5 
 
 # Define the grid parameters
-GRID_SIZE = 100  # Size of the grid (e.g., 100x100)
+# GRID_SIZE = 100  # Size of the grid (e.g., 100x100)
 STEP_SIZE = 1.0  # Step size for discretization
 OBSTACLE_COST = float('inf')  # Cost for grid cells with obstacles
 GOAL_TOLERANCE = 0.5  # Tolerance for reaching the goal
    
+# include relevant import statements regarding path generation here.. 
+GRID_SIZE = 0.2
+ENV_LENGTH = 1
+x_dim =  ENV_LENGTH // GRID_SIZE
+y_dim = ENV_LENGTH // GRID_SIZE
+
+# start and goal pos from actual env
 start = (0, 0)
-goal = (10, 10)
+goal = (0.5, 0.5)
+
+map = OccupancyGridMap(x_dim=x_dim,
+                            y_dim=y_dim,
+                            exploration_setting='4N')
+
 #static obstalces
 obstacles = [(2, 2), (3, 3), (4, 4), (5, 5)]  # Example obstacle positions
 obj_detected = False 
 
-grid_rep = [
-[0,0,0],
-[0,0,0], 
-[0,0,0]
-]
-
+grid_rep = list(map)
 path = LifelongAStar(grid_rep).lifelong_astar(start, goal)
+example_goal_posex, goal_posey = path[j]
 
 # function to help with movement 
 def begin_rotating():
@@ -120,12 +130,10 @@ while robot.step(timestep) != -1:
     if path:
         print("Path found:", path)
         if obj_detected:
-            grid_rep = [
-                [0,0,0],
-                [0,0,0],
-                [0,0,0]
-            ]
-
+            grid_rep = list(map) 
+            obs_pose = (0,0)
+            # update grid_rep 
+            grid_rep[obs_pose[0]][obs_pose[1]] = 1
             path = LifelongAStar(grid_rep).lifelong_astar(start, goal)
             j = 0 
             if not goal_reached:
