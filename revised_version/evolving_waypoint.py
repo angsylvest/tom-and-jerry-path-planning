@@ -112,18 +112,18 @@ def plot_circle_with_paths_and_coordinates(center, radius, start_pos, end_pos, t
     plt.show()
 
 # Example usage with corrected positions:
-center = (5, 1)
-radius = 1
-start_pos = (7, 2)  # Adjusted to be outside the circle
-end_pos = (-6, -3)  # Adjusted to be outside the circle
+# center = (5, 1)
+# radius = 1
+# start_pos = (7, 2)  # Adjusted to be outside the circle
+# end_pos = (-6, -3)  # Adjusted to be outside the circle
 
-tangent_start, tangent_end, marked_coordinates = get_circle_paths_and_coordinates(center, radius, start_pos, end_pos) # FID radius, center is where obstacle is 
+# tangent_start, tangent_end, marked_coordinates = get_circle_paths_and_coordinates(center, radius, start_pos, end_pos) # FID radius, center is where obstacle is 
 
-# Print the values
-print("Tangent Start Point:", tangent_start)
-print("Tangent End Point:", tangent_end)
-print("Marked Coordinates around the Circle (excluding start and end positions):")
-print(marked_coordinates)
+# # Print the values
+# print("Tangent Start Point:", tangent_start)
+# print("Tangent End Point:", tangent_end)
+# print("Marked Coordinates around the Circle (excluding start and end positions):")
+# print(marked_coordinates)
 
-# Plot the graph
-plot_circle_with_paths_and_coordinates(center, radius, start_pos, end_pos, tangent_start, tangent_end, marked_coordinates)
+# # Plot the graph
+# plot_circle_with_paths_and_coordinates(center, radius, start_pos, end_pos, tangent_start, tangent_end, marked_coordinates)

@@ -8,13 +8,13 @@ from math import pi
 TIME_STEP = 32
 robot = Supervisor()  # create Supervisor instance
 emitter = robot.getDevice("emitter")
-emitter.setChannel(1)
+emitter.setChannel(2)
 receiver = robot.getDevice("receiver") 
 receiver.enable(TIME_STEP)
-receiver.setChannel(2) 
+receiver.setChannel(1) 
 
 trials = 1
-simulation_time = 60
+simulation_time = 600 
 
 def message_listener(time_step):
 
@@ -42,20 +42,46 @@ def run_seconds(t):
         
         if robot.getTime() - start > new_t: 
             break 
-   
     return 
-   
+    
+def set_agent_up(start): 
+    x, y = start 
+    node = robot.getFromDef('main-e-puck')
+    translation_field = node.getField('translation')
+    new_value = [x, y, 0]
+    translation_field.setSFVec3f(new_value)
+    
+
+def create_goal_msg(start = (0,0), goal = (0.3,0.3)):
+    # update agent pos here 
+    set_agent_up(start)
+    
+    msg = "goal_update:"
+    startx, starty = start 
+    goalx, goaly = goal 
+    
+    msg += str(startx) + "-" + str(starty) + "-"
+    msg += str(goalx) +  "-" + str(goaly)
+    
+    print(f'attempting to send goal to controller: {msg}')
+    
+    emitter.send(msg)
+     
            
 def run_optimization():
     
     for i in range(trials): 
         print('beginning new trial', i)
-        emitter.send(str(msg).encode('utf-8'))
+        
+        # Update start and goal pose for given agent 
+        create_goal_msg() # TODO: enable abiltiy to add custom start and goal pose 
+        
+        # time limit to run 
         run_seconds(simulation_time) 
             
         # include metric info here 
         msg = 'trial' + str(i)
-        emitter.send(msg.encode('utf-8')) 
+        emitter.send(msg) 
         prev_msg = msg
         
     # reset env here 
@@ -69,74 +95,3 @@ def main():
 main()
                     
 
-
-
-# # set up environments 
-# def generate_robot_central(num_robots):
-
-#     global fitness_scores 
-#     global collected_count 
-#     global population
-#     global columns 
-#     global r_pos_to_generate
-#     global pairs 
-#     global overall_fitness_scores
-#     global prev_msg 
-#     global id_msg
-#     global id_ind
-    
-#     global input_from_others
-    
-#     curr_msg = str("size-" + str(num_robots))
-#     if curr_msg != prev_msg: 
-#         emitter.send(str("size-" + str(num_robots)).encode('utf-8'))
-#         prev_msg = curr_msg
-    
-#     if len(population) != 0: 
-    
-#         for r in population: 
-#             r.remove()
-             
-#     population = []
-#     fitness_scores = []
-#     overall_fitness_scores = []
-#     collected_count = []
-#     pairs = []
-#     id_msg = "ids"
-#     id_ind = "id_ind"
-        
-#     for i in range(num_robots):
-#         curr_key = f'agent-{i}'
-#         rootNode = robot.getRoot()
-#         rootChildrenField = rootNode.getField('children')
-#         if i == 0: 
-#             robot_name = "k0" 
-#         else: 
-#             robot_name = "k0(" + str(i) + ")"
-        
-#         # Import the khepera PROTO with a dynamically set robot name
-#         import_string = 'khepera {{ robotName "{0}" }}'.format(robot_name)
-#         rootChildrenField.importMFNodeFromString(-1, import_string)
-        
-#         rec_node = rootChildrenField.getMFNode(-1)
-        
-#         # rec_node = robot.getFromDef('khepera') 
-#         t_field = rec_node.getField('translation')
-       
-#         input_from_others[curr_key] = 0
-        
-#         pose = [round(random.uniform(0.3, -0.3),2), round(random.uniform(0.3, -0.3) ,2), 0.02]
-#         while pose in r_pos_to_generate: # remove any duplicates
-#             pose = [round(random.uniform(0.3, -0.3),2), round(random.uniform(0.3, -0.3) ,2), 0.02]
-#         r_pos_to_generate.append(pose)
-        
-#         t_field.setSFVec3f(pose)
-        
-#         # sets up metrics 
-#         fitness_scores.append("!")
-#         overall_fitness_scores.append('!')
-#         pairs.append("!")
-#         collected_count.append(0)
-#         population.append(rec_node)
-#         id_msg += " " + str(rec_node.getId()) 
-#         id_ind += " " + curr_key

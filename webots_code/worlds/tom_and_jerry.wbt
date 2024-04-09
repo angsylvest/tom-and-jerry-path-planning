@@ -18,11 +18,14 @@ TexturedBackgroundLight {
 }
 RectangleArena {
 }
-E-puck {
+DEF main-e-puck E-puck {
   translation 0.12517 -0.400697 0
   rotation 0 0 1 0.785399
-  controller "my_controller"
+  controller "tom_and_jerry"
+  receiver_channel 2
   turretSlot [
+    DistanceSensor {
+    }
     Camera {
       name "camera(1)"
       recognition Recognition {
@@ -36,6 +39,16 @@ E-puck {
 }
 TinkerbotsBase {
   translation 0 0.75 0.02
+  controller "tom_and_jerry_supervisor"
+  supervisor TRUE
+  extensionSlot [
+    Emitter {
+      channel 2
+    }
+    Receiver {
+      channel 1
+    }
+  ]
 }
 E-puck {
   translation -0.379201 0.359201 0

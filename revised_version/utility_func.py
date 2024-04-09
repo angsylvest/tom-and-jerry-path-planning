@@ -64,7 +64,7 @@ def dynamic_a_star(env, start_pos, goal_pos, obstacle_pos):
             if tentative_g_score < g_score.get(neighbor, float('inf')):
                 came_from[neighbor] = current
                 g_score[neighbor] = tentative_g_score
-                print(f'neighbor: {neighbor} and goal node {goal_node}')
+                # print(f'neighbor: {neighbor} and goal node {goal_node}')
                 f_score = tentative_g_score + euclidean_distance(neighbor.position, goal_node.position)
                 heapq.heappush(open_set, (f_score, neighbor))
 
