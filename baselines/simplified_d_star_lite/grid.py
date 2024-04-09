@@ -131,7 +131,7 @@ class SLAM:
     def __init__(self, map: OccupancyGridMap, view_range: int):
         self.ground_truth_map = map
         self.slam_map = OccupancyGridMap(x_dim=map.x_dim,
-                                         y_dimexploration_setting=map.y_dim)
+                                         y_dim=map.y_dim)
         self.view_range = view_range
 
     def set_ground_truth_map(self, gt_map: OccupancyGridMap):

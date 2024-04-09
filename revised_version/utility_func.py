@@ -10,6 +10,25 @@ STEP_SIZE = 1.0  # Step size for discretization
 OBSTACLE_COST = float('inf')  # Cost for grid cells with obstacles
 GOAL_TOLERANCE = 0.5  # Tolerance for reaching the goal
 
+# translation function used for D* lite .. 
+def real_to_grid_pos(real_pos=(0,0), env_size=(1,1), upper_left_corner=(-0.5, 0.5), grid_size = 0.2):
+    # Calculate the grid dimensions
+    x_dim = int(env_size[0] / grid_size)
+    y_dim = int(env_size[1] / grid_size)
+    
+    # Calculate the position offset based on the upper left corner
+    offset_x = upper_left_corner[0]
+    offset_y = upper_left_corner[1]
+    
+    # Calculate the grid position
+    grid_x = int((real_pos[0] - offset_x) / grid_size)
+    grid_y = int((offset_y - real_pos[1]) / grid_size)  # y-axis is inverted in the grid
+    
+    # Ensure the grid position is within bounds
+    grid_x = max(0, min(x_dim - 1, grid_x))
+    grid_y = max(0, min(y_dim - 1, grid_y))
+    
+    return grid_x, grid_y
 
 # Define the heuristic function (Euclidean distance)
 def euclidean_distance(node, goal):

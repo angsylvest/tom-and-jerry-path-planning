@@ -23,6 +23,8 @@ if __name__ == '__main__':
     map  =  OccupancyGridMap(x_dim=x_dim,
                                 y_dim=y_dim,
                                 exploration_setting='4N')
+    
+    print(f'occupancy grid: {map}')
 
     new_position = start
     last_position = start

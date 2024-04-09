@@ -16,16 +16,25 @@ sys.path.append('../../../')
 
 from baselines.simplified_d_star_lite.grid import * 
 from baselines.simplified_d_star_lite.d_star_lite import * 
+from revised_version.utility_func import *
 
 OBSTACLE = 255
 UNOCCUPIED = 0
 
 # include relevant import statements regarding path generation here.. 
-x_dim = 100
-y_dim = 80
-start = (10, 10)
-goal = (39, 70)
+GRID_SIZE = 0.2
+ENV_LENGTH = 1
+x_dim =  ENV_LENGTH // GRID_SIZE
+y_dim = ENV_LENGTH // GRID_SIZE
+
+# start and goal pos from actual env
+start = (0, 0)
+goal = (0.5, 0.5)
 view_range = 5
+
+# need way to convert cur pos to grid space pos 
+startx, starty = real_to_grid_pos(real_pos=start, env_size=(ENV_LENGTH,ENV_LENGTH), upper_left_corner=(-0.5, 0.5), grid_size = GRID_SIZE)
+goalx, goaly = real_to_grid_pos(real_pos=goal, env_size=(ENV_LENGTH,ENV_LENGTH), upper_left_corner=(-0.5, 0.5), grid_size = GRID_SIZE)
 
 map  =  OccupancyGridMap(x_dim=x_dim,
                             y_dim=y_dim,
@@ -112,25 +121,10 @@ def stop():
     leftMotor.setVelocity(0)
     rightMotor.setPosition(float('inf'))
     rightMotor.setVelocity(0)
-    
-
-#node descrtization
-def gen_grid(upper_left, num_rows, num_cols, dist):
-    upperx, uppery = upper_left 
-    Grid_pos = [(upperx, uppery)]
-    for i in range(num_cols):
-        for j in range(num_rows):
-            Next_center = (upperx + (i * dist), uppery - (j * dist))
-            Grid_pos.append(Next_center)
-    return Grid_pos
-
-#upper left is the one on Webots
-result = gen_grid((-0.379201, 0.359201), 4, 4, 1) 
-# Main loop:
-# - perform simulation steps until Webots is stopping the controller
 
 
 i = 0 
+j = 0 
 while robot.step(timestep) != -1:
     roll, pitch, yaw = inertia.getRollPitchYaw()
     yaw = round(yaw, 2)
@@ -158,7 +152,8 @@ while robot.step(timestep) != -1:
 
             # d star
             path, g, rhs = dstar.move_and_replan(robot_position=new_position)
-
+            j = 0
+            example_goal_posex, goal_posey = path[j]
 
             if not goal_reached:
                 robot_current_posx, robot_current_posy  = float(gps.getValues()[0]), float(gps.getValues()[1])
@@ -172,8 +167,13 @@ while robot.step(timestep) != -1:
 
             stop()
             goal_reached = True
-     
+            print(f'goal reached')
+
+        elif math.dist([robot_current_posx, robot_current_posy], [example_goal_posex, goal_posey]) < 0.05 and j+1 < len(path):
+            j += 1 
+            example_goal_posex, goal_posey = path[j]
   
+
         if yaw != chosen_direction and not goal_reached: 
             begin_rotating()
                     
