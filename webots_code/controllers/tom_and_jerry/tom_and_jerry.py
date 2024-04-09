@@ -116,6 +116,7 @@ def message_listener():
     global coordinates
     global evolving_waypoint_index
     global evolving
+    global marked_coordinates
     
 
     if receiver.getQueueLength()>0:
@@ -225,7 +226,7 @@ while robot.step(timestep) != -1:
                     evolving_waypoint_index += 1 
                 else: 
                     evolving = False 
-                    goal = goalx, goaly 
+                    goalx, goaly = goal 
                     path_generator = TomAndJerry(env, current_pos=(robot_current_posx, robot_current_posy), goal_pos=(goalx, goaly))
                     # update to be new path 
                     path = path_generator.a_star_path()
