@@ -17,6 +17,7 @@ sys.path.append('../../../')
 from baselines.lifelong_a_star import * 
 # using bc already has an occupancy grid 
 from baselines.simplified_d_star_lite.grid import * 
+from revised_version.utility_func import *
 
 
 # create the Robot instance.
@@ -38,6 +39,11 @@ leftMotor = robot.getDevice('left wheel motor')
 rightMotor = robot.getDevice('right wheel motor')
 leftMotor.setVelocity(0)
 rightMotor.setVelocity(0)
+emitter = robot.getDevice("emitter")
+emitter.setChannel(1)
+receiver = robot.getDevice("receiver") 
+receiver.enable(timestep)
+receiver.setChannel(2) 
  
 # coordinates = path
 j = 0
@@ -99,6 +105,82 @@ def stop():
     leftMotor.setVelocity(0)
     rightMotor.setPosition(float('inf'))
     rightMotor.setVelocity(0)
+
+
+def message_listener():
+    global goal 
+    global start 
+    global example_goal_posex
+    global goal_posey
+    global j 
+    global path_generator 
+    global coordinates
+    global evolving_waypoint_index
+    global evolving
+    global marked_coordinates
+    
+
+    if receiver.getQueueLength()>0:
+        message = receiver.getString()
+        print(f'current message to taj: {message}')
+        
+        if 'goal_update' in message: 
+            msg = message.split(':')[1].split('|')
+            startx = float(msg[0])
+            starty = float(msg[1])
+            
+            goalx = float(msg[2])
+            goaly = float(msg[3])
+            
+            start = startx, starty
+            goal = goalx, goaly 
+            example_goal_posex, goal_posey = goal
+
+            map = OccupancyGridMap(x_dim=x_dim,
+                                        y_dim=y_dim,
+                                        exploration_setting='4N')
+
+            #static obstalces
+            obstacles = [(2, 2), (3, 3), (4, 4), (5, 5)]  # Example obstacle positions
+            obj_detected = False 
+
+            grid_rep = list(map)
+            path = LifelongAStar(grid_rep).lifelong_astar(start, goal)
+            example_goal_posex, goal_posey = path[j]
+            
+            receiver.nextPacket() 
+            
+        elif 'obj-info' in message: 
+            # unpack obs info 
+            print(f'info from msg: {message}')
+            msg = message.split("|")
+
+            obs_pose = msg 
+            grid_obsx, grid_obsy = real_to_grid_pos(real_pos=obs_pose, env_size=(ENV_LENGTH,ENV_LENGTH), upper_left_corner=(-0.5, 0.5), grid_size = GRID_SIZE)
+
+            map = OccupancyGridMap(x_dim=x_dim,
+                                        y_dim=y_dim,
+                                        exploration_setting='4N')
+
+            #static obstalces
+            # obstacles = [(2, 2), (3, 3), (4, 4), (5, 5)]  # Example obstacle positions
+            # obj_detected = False 
+
+            grid_rep = list(map)
+
+            # put obs_pose here .. 
+
+            
+            path = LifelongAStar(grid_rep).lifelong_astar(start, goal)
+            example_goal_posex, goal_posey = path[j]
+
+            j = 0
+            example_goal_posex, goal_posey = path[j]
+
+            receiver.nextPacket()  
+            
+        else: 
+            receiver.nextPacket() 
     
 
 #node descrtization
@@ -130,15 +212,8 @@ while robot.step(timestep) != -1:
     if path:
         print("Path found:", path)
         if obj_detected:
-            grid_rep = list(map) 
-            obs_pose = (0,0)
-            # update grid_rep 
-            grid_rep[obs_pose[0]][obs_pose[1]] = 1
-            path = LifelongAStar(grid_rep).lifelong_astar(start, goal)
-            j = 0 
-            if not goal_reached:
-                robot_current_posx, robot_current_posy  = float(gps.getValues()[0]), float(gps.getValues()[1])
-            
+            msg = "obj-detected"
+            emitter.send(msg)
     
         if math.dist([robot_current_posx, robot_current_posy], [example_goal_posex, goal_posey]) > 0.05 and yaw != round(math.atan2(goal_posey-robot_current_posy,example_goal_posex-robot_current_posx),2): 
          

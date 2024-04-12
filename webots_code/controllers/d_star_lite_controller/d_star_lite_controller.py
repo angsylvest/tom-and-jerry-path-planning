@@ -76,6 +76,11 @@ leftMotor = robot.getDevice('left wheel motor')
 rightMotor = robot.getDevice('right wheel motor')
 leftMotor.setVelocity(0)
 rightMotor.setVelocity(0)
+emitter = robot.getDevice("emitter")
+emitter.setChannel(1)
+receiver = robot.getDevice("receiver") 
+receiver.enable(timestep)
+receiver.setChannel(2) 
  
 coordinates = path
 j = 0
@@ -122,6 +127,85 @@ def stop():
     rightMotor.setPosition(float('inf'))
     rightMotor.setVelocity(0)
 
+def message_listener():
+    global goal 
+    global start 
+    global example_goal_posex
+    global goal_posey
+    global j 
+    global path_generator 
+    global coordinates
+    global evolving_waypoint_index
+    global evolving
+    global marked_coordinates
+    
+
+    if receiver.getQueueLength()>0:
+        message = receiver.getString()
+        print(f'current message to taj: {message}')
+        
+        if 'goal_update' in message: 
+            msg = message.split(':')[1].split('|')
+            startx = float(msg[0])
+            starty = float(msg[1])
+            
+            goalx = float(msg[2])
+            goaly = float(msg[3])
+            
+            start = startx, starty
+            goal = goalx, goaly 
+            example_goal_posex, goal_posey = goal
+            
+            print(f'new map for d* lite looks like: {map.occupancy_grid_map}')
+            dstar = DStarLite(map=map,
+                                s_start=start,
+                                s_goal=goal)
+
+            # SLAM to detect vertices
+            slam = SLAM(map=map,
+                        view_range=view_range)
+
+
+            # move and compute path
+            path, g, rhs = dstar.move_and_replan(robot_position=new_position)
+            
+            print(f'updated path: {coordinates}')
+            
+            receiver.nextPacket() 
+            
+        elif 'obj-info' in message: 
+            # unpack obs info 
+
+            print(f'info from msg: {message}')
+            msg = message.split("|")
+
+            new_observation = msg 
+
+            # need way to convert cur pos to grid space pos 
+            obsx, obsy = real_to_grid_pos(real_pos=start, env_size=(ENV_LENGTH,ENV_LENGTH), upper_left_corner=(-0.5, 0.5), grid_size = GRID_SIZE)
+
+            # example: update position of obstacles 
+            dstar.sensed_map.set_obstacle(pos=new_observation["pos"])
+
+            # example: remove obstacle from a certain spot 
+            dstar.sensed_map.remove_obstacle(pos=new_observation["pos"])
+
+            # slam
+            new_edges_and_old_costs, slam_map = slam.rescan(global_position=new_position)
+
+            dstar.new_edges_and_old_costs = new_edges_and_old_costs
+            dstar.sensed_map = slam_map
+
+            # d star
+            path, g, rhs = dstar.move_and_replan(robot_position=new_position)
+            j = 0
+            example_goal_posex, goal_posey = path[j]
+
+            receiver.nextPacket()  
+            
+        else: 
+            receiver.nextPacket() 
+
 
 i = 0 
 j = 0 
@@ -137,27 +221,9 @@ while robot.step(timestep) != -1:
     if path:
         print("Path found:", path)
         if obj_detected:
-            new_observation = {"pos": (2,2), "type": 255} # 255 for obstacle, 0 for not
-            # example: update position of obstacles 
-            dstar.sensed_map.set_obstacle(pos=new_observation["pos"])
 
-            # example: remove obstacle from a certain spot 
-            dstar.sensed_map.remove_obstacle(pos=new_observation["pos"])
-            
-            # slam
-            new_edges_and_old_costs, slam_map = slam.rescan(global_position=new_position)
-
-            dstar.new_edges_and_old_costs = new_edges_and_old_costs
-            dstar.sensed_map = slam_map
-
-            # d star
-            path, g, rhs = dstar.move_and_replan(robot_position=new_position)
-            j = 0
-            example_goal_posex, goal_posey = path[j]
-
-            if not goal_reached:
-                robot_current_posx, robot_current_posy  = float(gps.getValues()[0]), float(gps.getValues()[1])
-            
+            msg = "obj-detected"
+            emitter.send(msg)
     
         if math.dist([robot_current_posx, robot_current_posy], [example_goal_posex, goal_posey]) > 0.05 and yaw != round(math.atan2(goal_posey-robot_current_posy,example_goal_posex-robot_current_posx),2): 
          
