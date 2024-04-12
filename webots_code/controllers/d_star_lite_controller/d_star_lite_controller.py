@@ -151,8 +151,13 @@ def message_listener():
             goalx = float(msg[2])
             goaly = float(msg[3])
             
-            start = int(startx), int(starty)
-            goal = int(goalx), int(goaly) 
+            # need way to convert cur pos to grid space pos 
+            startx, starty = real_to_grid_pos(real_pos=(startx, starty), env_size=(ENV_LENGTH,ENV_LENGTH), upper_left_corner=(-0.5, 0.5), grid_size = GRID_SIZE)
+            goalx, goaly = real_to_grid_pos(real_pos=(goalx, goaly), env_size=(ENV_LENGTH,ENV_LENGTH), upper_left_corner=(-0.5, 0.5), grid_size = GRID_SIZE)
+
+            start = startx, starty
+            goal = goalx, goaly
+
             example_goal_posex, goal_posey = goal
             
             print(f'new map for d* lite looks like: {map.occupancy_grid_map}')
@@ -182,6 +187,9 @@ def message_listener():
             msg = message.split("|")
 
             new_observation = msg 
+            # new_observation = {"pos": (2,2), "type": 255} # 255 for obstacle, 0 for not
+
+            startx, starty = (robot_current_posx, robot_current_posy)
 
             # need way to convert cur pos to grid space pos 
             obsx, obsy = real_to_grid_pos(real_pos=start, env_size=(ENV_LENGTH,ENV_LENGTH), upper_left_corner=(-0.5, 0.5), grid_size = GRID_SIZE)

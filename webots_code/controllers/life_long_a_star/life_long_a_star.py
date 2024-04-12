@@ -69,6 +69,11 @@ y_dim = int(ENV_LENGTH // GRID_SIZE)
 start = (0, 0)
 goal = (1, 1)
 
+# need way to convert cur pos to grid space pos 
+startx, starty = real_to_grid_pos(real_pos=start, env_size=(ENV_LENGTH,ENV_LENGTH), upper_left_corner=(-0.5, 0.5), grid_size = GRID_SIZE)
+goalx, goaly = real_to_grid_pos(real_pos=goal, env_size=(ENV_LENGTH,ENV_LENGTH), upper_left_corner=(-0.5, 0.5), grid_size = GRID_SIZE)
+
+
 map = OccupancyGridMap(x_dim=x_dim,
                             y_dim=y_dim,
                             exploration_setting='4N')
@@ -79,7 +84,7 @@ obj_detected = False
 
 print(f'map: {map.occupancy_grid_map}')
 grid_rep = list(map.occupancy_grid_map)
-path = LifelongAStar(grid_rep).lifelong_astar(start, goal)
+path = LifelongAStar(grid_rep).lifelong_astar((startx, starty),(goalx, goaly))
 example_goal_posex, goal_posey = path[j]
 print(f'path generated: {path}')
 
@@ -130,18 +135,21 @@ def message_listener():
             
             goalx = float(msg[2])
             goaly = float(msg[3])
-            
-            start = int(startx), int(starty)
-            goal = int(goalx), int(goaly) 
+
+            # need way to convert cur pos to grid space pos 
+            startx, starty = real_to_grid_pos(real_pos=(startx, starty), env_size=(ENV_LENGTH,ENV_LENGTH), upper_left_corner=(-0.5, 0.5), grid_size = GRID_SIZE)
+            goalx, goaly = real_to_grid_pos(real_pos=(goalx, goaly), env_size=(ENV_LENGTH,ENV_LENGTH), upper_left_corner=(-0.5, 0.5), grid_size = GRID_SIZE)
+
+            start = startx, starty
+            goal = goalx, goaly
+
+
             example_goal_posex, goal_posey = goal
 
             map = OccupancyGridMap(x_dim=x_dim,
                                         y_dim=y_dim,
                                         exploration_setting='4N')
 
-            #static obstalces
-            obstacles = [(2, 2), (3, 3), (4, 4), (5, 5)]  # Example obstacle positions
-            obj_detected = False 
 
             grid_rep = list(map.occupancy_grid_map)
             path = LifelongAStar(grid_rep).lifelong_astar(start, goal)
@@ -171,6 +179,8 @@ def message_listener():
 
             # put obs_pose here .. 
 
+            startx, starty = (robot_current_posx, robot_current_posy)
+            startx, starty = real_to_grid_pos(real_pos=(startx, starty), env_size=(ENV_LENGTH,ENV_LENGTH), upper_left_corner=(-0.5, 0.5), grid_size = GRID_SIZE)
 
             path = LifelongAStar(grid_rep).lifelong_astar(start, goal)
             example_goal_posex, goal_posey = path[j]
