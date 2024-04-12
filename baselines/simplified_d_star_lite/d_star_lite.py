@@ -1,7 +1,9 @@
-from priority_queue import PriorityQueue, Priority
-from grid import OccupancyGridMap
+import sys 
+sys.path.append('../../../')
+from baselines.simplified_d_star_lite.priority_queue import PriorityQueue, Priority
+from baselines.simplified_d_star_lite.grid import OccupancyGridMap
 import numpy as np
-from utils import heuristic, Vertex, Vertices
+from baselines.simplified_d_star_lite.utils import heuristic, Vertex, Vertices
 from typing import Dict, List
 
 OBSTACLE = 255

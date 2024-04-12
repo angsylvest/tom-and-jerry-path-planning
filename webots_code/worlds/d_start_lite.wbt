@@ -21,7 +21,7 @@ RectangleArena {
 DEF main-e-puck E-puck {
   translation 0.12517 -0.400697 0
   rotation 0 0 1 0.785399
-  controller "tom_and_jerry"
+  controller "d_star_lite_controller"
   receiver_channel 2
   turretSlot [
     DistanceSensor {
@@ -39,7 +39,7 @@ DEF main-e-puck E-puck {
 }
 TinkerbotsBase {
   translation 0 0.75 0.02
-  controller "tom_and_jerry_supervisor"
+  controller "d_star_lite_supervisor"
   supervisor TRUE
   extensionSlot [
     Emitter {

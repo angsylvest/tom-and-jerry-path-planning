@@ -1,9 +1,14 @@
 import numpy as np
-from utils import get_movements_4n, get_movements_8n, heuristic, Vertices, Vertex
+
+import sys 
+sys.path.append('../../../')
+
+from baselines.simplified_d_star_lite.utils import get_movements_4n, get_movements_8n, heuristic, Vertices, Vertex
 from typing import Dict, List
 
 OBSTACLE = 255
 UNOCCUPIED = 0
+
 
 
 class OccupancyGridMap:

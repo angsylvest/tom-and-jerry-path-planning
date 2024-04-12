@@ -99,8 +99,8 @@ def create_goal_msg(start = (0,0), goal = (0.3,0.3)):
     startx, starty = start 
     goalx, goaly = goal 
     
-    msg += str(startx) + "-" + str(starty) + "-"
-    msg += str(goalx) +  "-" + str(goaly)
+    msg += str(startx) + "|" + str(starty) + "|"
+    msg += str(goalx) +  "|" + str(goaly)
     
     print(f'attempting to send goal to controller: {msg}')
     

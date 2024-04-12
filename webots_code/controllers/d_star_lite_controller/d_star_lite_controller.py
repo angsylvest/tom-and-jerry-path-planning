@@ -15,6 +15,7 @@ import sys
 sys.path.append('../../../')
 
 from baselines.simplified_d_star_lite.grid import * 
+from baselines.simplified_d_star_lite.utils import * 
 from baselines.simplified_d_star_lite.d_star_lite import * 
 from revised_version.utility_func import *
 
@@ -24,12 +25,12 @@ UNOCCUPIED = 0
 # include relevant import statements regarding path generation here.. 
 GRID_SIZE = 0.2
 ENV_LENGTH = 1
-x_dim =  ENV_LENGTH // GRID_SIZE
-y_dim = ENV_LENGTH // GRID_SIZE
+x_dim =  int(ENV_LENGTH // GRID_SIZE)
+y_dim = int(ENV_LENGTH // GRID_SIZE)
 
 # start and goal pos from actual env
 start = (0, 0)
-goal = (0.5, 0.5)
+goal = (1, 1)
 view_range = 5
 
 # need way to convert cur pos to grid space pos 
@@ -133,11 +134,9 @@ def message_listener():
     global example_goal_posex
     global goal_posey
     global j 
-    global path_generator 
     global coordinates
-    global evolving_waypoint_index
-    global evolving
-    global marked_coordinates
+    global j
+    global chosen_direction
     
 
     if receiver.getQueueLength()>0:
@@ -152,8 +151,8 @@ def message_listener():
             goalx = float(msg[2])
             goaly = float(msg[3])
             
-            start = startx, starty
-            goal = goalx, goaly 
+            start = int(startx), int(starty)
+            goal = int(goalx), int(goaly) 
             example_goal_posex, goal_posey = goal
             
             print(f'new map for d* lite looks like: {map.occupancy_grid_map}')
@@ -168,6 +167,9 @@ def message_listener():
 
             # move and compute path
             path, g, rhs = dstar.move_and_replan(robot_position=new_position)
+            j = 0 
+            example_goal_posex, goal_posey = path[j]
+            chosen_direction = round(math.atan2(goal_posey-robot_current_posy,example_goal_posex-robot_current_posx),2) 
             
             print(f'updated path: {coordinates}')
             
@@ -213,13 +215,14 @@ while robot.step(timestep) != -1:
     roll, pitch, yaw = inertia.getRollPitchYaw()
     yaw = round(yaw, 2)
     robot_current_posx, robot_current_posy  = float(gps.getValues()[0]), float(gps.getValues()[1])
+    message_listener()
 
     if i == 0: 
         print(f'robot is starting from {robot_current_posx, robot_current_posy} to goal pose {example_goal_posex, goal_posey}')
         path = path, g, rhs = dstar.move_and_replan(robot_position=new_position)
 
     if path:
-        print("Path found:", path)
+        # print("Path found:", path)
         if obj_detected:
 
             msg = "obj-detected"

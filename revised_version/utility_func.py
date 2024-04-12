@@ -1,7 +1,9 @@
 import math
 import heapq
 
-from node import * 
+import sys 
+sys.path.append('../')
+from revised_version.node import * 
 
 
 # Define the grid parameters
