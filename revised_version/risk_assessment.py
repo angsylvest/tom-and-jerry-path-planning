@@ -43,6 +43,7 @@ class ObstacleAssessment():
         
 
     def update_counts(self):
+        num_collide = 0 
         for i in range(len(self.obstacle_poses)):
             # determine if possible to collide 
             collide = 'no'
@@ -55,13 +56,16 @@ class ObstacleAssessment():
                     rang = self.sort_into_ranges(deg)
                     self.counts[rang] += 1
                     collide = 'yes'
+                    num_collide += 1
 
             self.x_train.append(self.counts)
             self.y_train.append(collide)
 
         # run test of most current version 
-        # might just need general prob based on observations 
-        return np.array(self.x_train), np.array(self.y_train), np.array(self.x_train[0])
+        # might just need general prob based on observations
+        prob = num_collide / len(self.obstacle_poses)
+
+        return np.array(self.x_train), np.array(self.y_train), prob
 
     def distance(self, pos1, pos2): 
         return math.sqrt((pos1[0] - pos2[0])**2 + (pos1[1] - pos2[1])**2)

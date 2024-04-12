@@ -37,9 +37,9 @@ def order_coordinates_quadrants(coordinates):
     return np.concatenate([quadrant_I, quadrant_II, quadrant_III, quadrant_IV])
 
 def get_circle_paths_and_coordinates(center, radius, start_pos, end_pos, num_coordinates=20):
-    if distance(center, start_pos) <= radius or distance(center, end_pos) <= radius:
-        raise ValueError("Start and end positions must be outside the circle.")
-    
+    while distance(center, start_pos) <= radius or distance(center, end_pos) <= radius:
+        # raise ValueError("Start and end positions must be outside the circle.")
+        radius *= 0.9
     # Find tangent points on the circle
     tangent_start = find_tangent_point(center, radius, start_pos)
     tangent_end = find_tangent_point(center, radius, end_pos)

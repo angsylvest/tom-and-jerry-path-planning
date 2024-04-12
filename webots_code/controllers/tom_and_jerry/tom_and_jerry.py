@@ -10,6 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from math import sqrt
 import numpy as np
+import ast
 
 # include relevant import statements regarding path generation here.. 
 import sys 
@@ -124,7 +125,7 @@ def message_listener():
         print(f'current message to taj: {message}')
         
         if 'goal_update' in message: 
-            msg = message.split(':')[1].split('-')
+            msg = message.split(':')[1].split('|')
             startx = float(msg[0])
             starty = float(msg[1])
             
@@ -147,24 +148,34 @@ def message_listener():
             receiver.nextPacket() 
             
         elif 'obj-info' in message: 
-            evolving_waypoint_index = 0
-            radians = [0.785398, 1.5708, 2.35619, 3.14159, 3.92699, 4.71239, 5.49779, 6.28319]
-            X_train = np.array([[0, 3, 4, 0, 2],
-                            [0, 1, 4, 0, 2],
-                            [0, 3, 4, 0, 2],
-                            [0, 3, 4, 0, 2],
-                            [0, 3, 4, 0, 2]])
-            y_train = np.array(['yes', 'no', 'yes', 'yes', 'no'])
-            X_test = np.array([[0, 3, 4, 0, 2]])
+            # unpack obs info 
+
+            print(f'info from msg: {message}')
+            msg = message.split("|")
+
+            rob_poses = ast.literal_eval(msg[1].split("=")[1]) # [(0,0), (0,0), (0,0), (0,0), (0,0)]
+            obst_poses = ast.literal_eval(msg[2].split("=")[1]) # [(1,0), (1,0), (1,0), (1,0), (1,0)]
+            obs_orient = ast.literal_eval(msg[3].split("=")[1])  #[0.785398, 1.5708, 2.35619, 3.14159, 3.92699]
+            risk_assessment = ObstacleAssessment(robot_poses=rob_poses, robot_goal=goal, obstacle_poses=obst_poses, obs_orient=obs_orient)
             
-            obs_pose = (3,3) # just example, can be changed .. 
-            sector_dict, dist = path_generator.calc_fid(path, (0.2, 0.4), radians, X_train, y_train, X_test, start_pos, obs_pose) # inputs: current path, 
-            tangent_start, tangent_end, marked_coordinates = get_circle_paths_and_coordinates(obs_pose, dist, start_pos, goal_pos) # FID radius, center is where obstacle is 
+            x_train, y_train, prob = risk_assessment.update_counts()
+            curr_pose = float(gps.getValues()[0]), float(gps.getValues()[1])
+            radius = 0.35 # radius of e-puck robot
+
+            evolving_waypoint_index = 0
+            
+            obs_pose = obst_poses[-1] # just example, can be changed .. 
+            sector_dict, dist, ait, opt_rad = path_generator.calc_fid(path, obs_pose, obs_orient, prob, curr_pose, obs_pose) # inputs: current path, 
+            print(f'obs pose: {obs_pose} for optimized radius: {opt_rad} and curr_pose for agent {curr_pose} and goal: {goal}')
+            tangent_start, tangent_end, marked_coordinates = get_circle_paths_and_coordinates(obs_pose, opt_rad, curr_pose, goal) # FID radius, center is where obstacle is 
             currx, curry = marked_coordinates[evolving_waypoint_index]
             currx = round(currx, 2)
             curry = round(curry, 2)
+            example_goal_posex, goal_posey = currx, curry
             evolving_waypoint_index += 1 
-            evolving = True 
+            evolving = True
+
+            receiver.nextPacket()  
             
         else: 
             receiver.nextPacket() 
@@ -217,6 +228,7 @@ while robot.step(timestep) != -1:
             # Emily: here it stops, but you can just update the goal pose here if you have a list
             if j + 1 < len(coordinates) and not evolving:
                 example_goal_posex, goal_posey = coordinates[j + 1]
+                chosen_direction = round(math.atan2(goal_posey-robot_current_posy,example_goal_posex-robot_current_posx),2) 
                 goal_reached = False
                 j+= 1
                 
@@ -232,6 +244,7 @@ while robot.step(timestep) != -1:
                     path = path_generator.a_star_path()
                     j = 0 
                     example_goal_posex, goal_posey = path[0]
+                    chosen_direction = round(math.atan2(goal_posey-robot_current_posy,example_goal_posex-robot_current_posx),2) 
                     obj_detected = False 
   
         if yaw != chosen_direction and not goal_reached: 

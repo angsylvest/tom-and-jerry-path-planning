@@ -13,6 +13,7 @@ from grid_environment import *
 from multi_bayes import * 
 from grid_environment import * 
 from evolving_waypoint import * 
+from risk_assessment import * 
 
 class TomAndJerry: 
 
@@ -37,6 +38,8 @@ class TomAndJerry:
         # Create an instance of MultinomialNaiveBayes
         #getting grasph of probability componenet
         model = MultinomialNaiveBayes()
+
+        print(f'input x train: {x_train} and y train: {y_train}')
 
         # Train the model with training data
         model.fit(x_train, y_train)
@@ -197,7 +200,7 @@ class TomAndJerry:
 
         return d_max
 
-    def calc_fid(self, line1_points, intersection_point, radians, X_train, y_train, X_test, current_node, obst_pose, F=0.3, w=0.9, n=1, f=0, m=1):
+    def calc_fid(self, line1_points, intersection_point, radians, prob, current_node, obst_pose, F=0.3, w=0.9, n=1, f=0, m=1):
         # TODO: explain this info and where it is coming from .. 
 
         #initalize dictionary
@@ -214,25 +217,40 @@ class TomAndJerry:
         #for each sector of the obstacle's movement
         # for sector in keys:
         for i in range(8):
-            predicted_class, specific_class_probability, severity, total_risk, c = self.update_bayes_model(X_train, y_train, X_test)
+
+            #maximum amount of risk potential in e-puck robot (caluclations of speed potential, etc)
+            max_risk = 2.3
+
+            probability = prob
+            severity = (0.3304 * self.obstacle_velocity) + (0.2957 * self.size) + (0.3739 * self.distance_refuge)
+            # print("Severity Value:", severity)
+
+            total_risk = probability * severity
+            # print("Total Risk:", total_risk)    
+
+            #calculate c, B, and find optimized radius
+            c = (max_risk - total_risk) / 10
+            # print("c value:", c)
+
+            # predicted_class, specific_class_probability, severity, total_risk, c = self.update_bayes_model(X_train, y_train, X_test)
             proximity_value = self.proximity_to_goal(self.current_pos, self.goal_pos, self.max_distance)
 
             result = self.is_isolated_or_clustered(line1_points, current_node) # TODO: what is this? 
             #b is equal to Benefit
             B = result[1] + proximity_value
-            print(B)
+            # print(B)
 
             optimized_radius = self.find_maximum_d(c, F, B, w, n, f, m)
-            print("Optimized Radius:", optimized_radius)
+            # print("Optimized Radius:", optimized_radius)
 
             #corresonding dictionary values for each
             sector_dict[f"Iteration_{i}"] = optimized_radius
 
-        print("Dictionary with optimized radius values:", sector_dict)
+        # print("Dictionary with optimized radius values:", sector_dict)
 
         distance = euclidean_distance(current_node, obst_pose)
-        print("Distance:", distance)
-        return sector_dict, distance, after_intersection
+        # print("Distance:", distance)
+        return sector_dict, distance, after_intersection, optimized_radius
     
     def generate_waypoints(self, obs_pose, dist, start_pos, goal_pos ): 
         tangent_start, tangent_end, marked_coordinates = get_circle_paths_and_coordinates(obs_pose, dist, start_pos, goal_pos) # FID radius, center is where obstacle is 
@@ -244,9 +262,9 @@ class TomAndJerry:
 def main():
     # generating example path here .. 
     start_pos = (0,0)
-    goal_pos = (5,5)
+    goal_pos = (0.5,0.5)
 
-    env = TomAndJerryEnvironment(dims = (10,10), upper_left=(-1,1)) 
+    env = TomAndJerryEnvironment(dims = (2,2), upper_left=(-1,1),grid_dim=0.2) 
     # print(f'discretized env: {env}')
 
     # begin by generating a* path using fully connected graph 
@@ -254,24 +272,35 @@ def main():
     curr_path = path_generator.a_star_path()
     print(f'a* path: {curr_path}')
 
-    # --- calculate fid if encounter obs ----- 
-    # TODO: what is this info? 
-    radians = [0.785398, 1.5708, 2.35619, 3.14159, 3.92699, 4.71239, 5.49779, 6.28319]
-    X_train = np.array([[0, 3, 4, 0, 2],
-                    [0, 1, 4, 0, 2],
-                    [0, 3, 4, 0, 2],
-                    [0, 3, 4, 0, 2],
-                    [0, 3, 4, 0, 2]])
-    y_train = np.array(['yes', 'no', 'yes', 'yes', 'no'])
-    X_test = np.array([[0, 3, 4, 0, 2]])
+    rob_poses = [(0,0), (0,0), (0,0), (0,0), (0,0)]
+    obst_poses =[(1,0), (1,0), (1,0), (1,0), (1,0)]
+    obs_orient = [0.785398, 1.5708, 2.35619, 3.14159, 3.92699]
+    risk_assessment = ObstacleAssessment(robot_poses=rob_poses, robot_goal=goal_pos, obstacle_poses=obst_poses, obs_orient=obs_orient)
+    x_train, y_train, prob = risk_assessment.update_counts()
+    print(f'updated counts given obs info: {risk_assessment.update_counts()}')
+
+    # calculate probability using given info 
+
+
+    # # --- calculate fid if encounter obs ----- 
+    # # TODO: what is this info? 
+    # radians = [0.785398, 1.5708, 2.35619, 3.14159, 3.92699, 4.71239, 5.49779, 6.28319]
+    # X_train = np.array([[0, 3, 4, 0, 2],
+    #                 [0, 1, 4, 0, 2],
+    #                 [0, 3, 4, 0, 2],
+    #                 [0, 3, 4, 0, 2],
+    #                 [0, 3, 4, 0, 2]])
+    # y_train = np.array(['yes', 'no', 'yes', 'yes', 'no'])
+    # X_test = np.array([[0, 3, 4, 0, 2]])
 
     obs_pose = (3,3)
-    sector, dist = path_generator.calc_fid(curr_path, (0.2, 0.4), radians, X_train, y_train, X_test, start_pos, obs_pose) # inputs: current path, 
+    sector, dist, other = path_generator.calc_fid(curr_path, (0.2, 0.4), obs_orient, prob, start_pos, obs_pose) # inputs: current path, 
     print(f'calc fid output: {sector, dist}')
 
     # create path based on location of obstacle and other info ..
     # TODO: where is this info? 
-    tangent_start, tangent_end, marked_coordinates = get_circle_paths_and_coordinates(obs_pose, dist, start_pos, goal_pos) # FID radius, center is where obstacle is 
+    radius = 0.35 # radius of e-puck robot
+    tangent_start, tangent_end, marked_coordinates = get_circle_paths_and_coordinates(obs_pose, radius, start_pos, goal_pos) # FID radius, center is where obstacle is 
     print(f'evolving waypoint generated around obstacle: {marked_coordinates}')
 
 
