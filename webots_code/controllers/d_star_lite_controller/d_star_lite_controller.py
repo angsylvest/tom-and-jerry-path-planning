@@ -88,7 +88,8 @@ coordinates = path
 j = 0
 
 # example of a goal pose (if you are using a cell, would need to find pos within that cell) 
-example_goal_posex, goal_posey = coordinates[0] #change to first index of the route list
+# example_goal_posex, goal_posey = coordinates[0] #change to first index of the route list
+example_goal_posex, goal_posey = grid_to_real_pos(grid_pos=coordinates[j])
 goal_reached = False 
 forward_speed = 5 
 
@@ -174,7 +175,8 @@ def message_listener():
             # move and compute path
             path, g, rhs = dstar.move_and_replan(robot_position=new_position)
             j = 0 
-            example_goal_posex, goal_posey = path[j]
+            # example_goal_posex, goal_posey = path[j]
+            example_goal_posex, goal_posey = grid_to_real_pos(grid_pos=path[j])
             chosen_direction = round(math.atan2(goal_posey-robot_current_posy,example_goal_posex-robot_current_posx),2) 
             
             print(f'updated path: {coordinates}')
@@ -222,7 +224,8 @@ def message_listener():
             # d star
             path, g, rhs = dstar.move_and_replan(robot_position=new_position)
             j = 0
-            example_goal_posex, goal_posey = path[j]
+            # example_goal_posex, goal_posey = path[j]
+            example_goal_posex, goal_posey = grid_to_real_pos(grid_pos=path[j])
 
             receiver.nextPacket()  
             
@@ -261,7 +264,8 @@ while robot.step(timestep) != -1:
 
         elif math.dist([robot_current_posx, robot_current_posy], [example_goal_posex, goal_posey]) < 0.05 and j+1 < len(path):
             j += 1 
-            example_goal_posex, goal_posey = path[j]
+            # example_goal_posex, goal_posey = path[j]
+            example_goal_posex, goal_posey = grid_to_real_pos(grid_pos=path[j])
   
 
         if yaw != chosen_direction and not goal_reached: 

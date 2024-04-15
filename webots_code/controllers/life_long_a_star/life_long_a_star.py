@@ -146,7 +146,7 @@ def message_listener():
             goal = goalx, goaly
 
 
-            example_goal_posex, goal_posey = goal
+            # example_goal_posex, goal_posey = goal
 
             map = OccupancyGridMap(x_dim=x_dim,
                                         y_dim=y_dim,
@@ -155,7 +155,8 @@ def message_listener():
 
             grid_rep = list(map.occupancy_grid_map)
             path = LifelongAStar(grid_rep).lifelong_astar(start, goal)
-            example_goal_posex, goal_posey = path[j]
+            example_goal_posex, goal_posey = grid_to_real_pos(grid_pos=path[j])
+            # example_goal_posex, goal_posey = path[j]
 
             chosen_direction = round(math.atan2(goal_posey-robot_current_posy,example_goal_posex-robot_current_posx),2) 
             
@@ -189,11 +190,15 @@ def message_listener():
             startx, starty = (robot_current_posx, robot_current_posy)
             startx, starty = real_to_grid_pos(real_pos=(startx, starty), env_size=(ENV_LENGTH,ENV_LENGTH), upper_left_corner=(-0.5, 0.5), grid_size = GRID_SIZE)
 
+            start = startx, starty 
+            
             path = LifelongAStar(grid_rep).lifelong_astar(start, goal)
-            example_goal_posex, goal_posey = path[j]
+            # example_goal_posex, goal_posey = path[j]
+            
+            example_goal_posex, goal_posey = grid_to_real_pos(grid_pos=path[j])
 
             j = 0
-            example_goal_posex, goal_posey = path[j]
+            # example_goal_posex, goal_posey = path[j]
 
             receiver.nextPacket()  
             
@@ -246,7 +251,8 @@ while robot.step(timestep) != -1:
         else: 
             # Emily: here it stops, but you can just update the goal pose here if you have a list
             if j + 1 < len(path):
-                example_goal_posex, goal_posey = path[j + 1]
+                example_goal_posex, goal_posey = grid_to_real_pos(grid_pos=path[j+1])
+                # example_goal_posex, goal_posey = path[j + 1]
                 goal_reached = False
                 j+= 1
      

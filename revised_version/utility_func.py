@@ -32,6 +32,25 @@ def real_to_grid_pos(real_pos=(0,0), env_size=(1,1), upper_left_corner=(-0.5, 0.
     
     return grid_x, grid_y
 
+def grid_to_real_pos(grid_pos=(0,0), env_size=(1,1), upper_left_corner=(-0.5, 0.5), grid_size=0.2):
+    # Calculate the grid dimensions
+    x_dim = int(env_size[0] / grid_size)
+    y_dim = int(env_size[1] / grid_size)
+    
+    # Calculate the position offset based on the upper left corner
+    offset_x = upper_left_corner[0]
+    offset_y = upper_left_corner[1]
+    
+    # Calculate the real x and y coordinates
+    real_x = grid_pos[0] * grid_size + offset_x
+    real_y = offset_y - grid_pos[1] * grid_size  # y-axis is inverted in the grid
+    
+    # Ensure the real coordinates are within bounds
+    real_x = max(offset_x, min(env_size[0] + offset_x, real_x))
+    real_y = max(offset_y - env_size[1], min(offset_y, real_y))
+    
+    return real_x, real_y
+
 # Define the heuristic function (Euclidean distance)
 def euclidean_distance(node, goal):
 
