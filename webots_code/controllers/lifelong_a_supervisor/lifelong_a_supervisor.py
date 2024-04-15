@@ -24,8 +24,35 @@ def message_listener(time_step):
         # print('supervisor msgs --', message) 
         message = receiver.getString()
         
-        if message: 
+        if 'obj-detected' in message: 
+            curr_node = robot.getFromDef('main-e-puck')
+            curr_x, curr_y, curr_z = curr_node.getField('translation').getSFVec3f()
+            curr_yaw = curr_node.getField('rotation').getSFVec3f()
+
+            obt_node = robot.getFromDef('obst-1')
+            obt_x, obt_y, obt_z = obt_node.getField('translation').getSFVec3f()
+            print(f'obstacle pose: {obt_x, obt_y}')
+            obt_yaw = obt_node.getField('rotation').getSFVec3f()
+
+            msg = "obj-info|"
+
+            rob_poses = [(round(curr_x,2), round(curr_y,2))]
+            obst_poses = [(round(obt_x,2), round(obt_y,2))]
+            obs_orient = [round(obt_yaw[2],2)]
+
+            # Add robot poses to the message
+            msg += f"robot_pose={rob_poses}|"
+
+            # Add obstacle poses to the message
+            msg += f"obstacle_pose={obst_poses}|"
+
+            # Add obstacle orientations to the message
+            msg += f"obstacle_orientation={obs_orient}|"
+
+            emitter.send(msg)
+
             receiver.nextPacket() 
+            
         else: 
             receiver.nextPacket() 
             

@@ -164,7 +164,11 @@ def message_listener():
             print(f'info from msg: {message}')
             msg = message.split("|")
 
-            obs_pose = msg 
+            rob_poses = ast.literal_eval(msg[1].split("=")[1]) # [(0,0), (0,0), (0,0), (0,0), (0,0)]
+            obst_poses = ast.literal_eval(msg[2].split("=")[1]) # [(1,0), (1,0), (1,0), (1,0), (1,0)]
+            obs_orient = ast.literal_eval(msg[3].split("=")[1])  #[0.785398, 1.5708, 2.35619, 3.14159, 3.92699]
+
+            obs_pose = obst_poses[0] 
             grid_obsx, grid_obsy = real_to_grid_pos(real_pos=obs_pose, env_size=(ENV_LENGTH,ENV_LENGTH), upper_left_corner=(-0.5, 0.5), grid_size = GRID_SIZE)
 
             map = OccupancyGridMap(x_dim=x_dim,
@@ -176,6 +180,7 @@ def message_listener():
             # obj_detected = False 
 
             grid_rep = list(map.occupancy_grid_map)
+            grid_rep[grid_obsx][grid_obsy] = 1
 
             # put obs_pose here .. 
 

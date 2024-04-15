@@ -10,6 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from math import sqrt
 import numpy as np
+import ast
 
 import sys 
 sys.path.append('../../../')
@@ -186,19 +187,31 @@ def message_listener():
             print(f'info from msg: {message}')
             msg = message.split("|")
 
-            new_observation = msg 
+            rob_poses = ast.literal_eval(msg[1].split("=")[1]) # [(0,0), (0,0), (0,0), (0,0), (0,0)]
+            obst_poses = ast.literal_eval(msg[2].split("=")[1]) # [(1,0), (1,0), (1,0), (1,0), (1,0)]
+            obs_orient = ast.literal_eval(msg[3].split("=")[1])  #[0.785398, 1.5708, 2.35619, 3.14159, 3.92699]
+
+            # need way to convert cur pos to grid space pos 
+            obsx, obsy = real_to_grid_pos(real_pos=obst_poses[0], env_size=(ENV_LENGTH,ENV_LENGTH), upper_left_corner=(-0.5, 0.5), grid_size = GRID_SIZE)
+
+            new_observation = {"pos": (obsx, obsy), "type": 255} 
             # new_observation = {"pos": (2,2), "type": 255} # 255 for obstacle, 0 for not
 
             startx, starty = (robot_current_posx, robot_current_posy)
 
-            # need way to convert cur pos to grid space pos 
-            obsx, obsy = real_to_grid_pos(real_pos=start, env_size=(ENV_LENGTH,ENV_LENGTH), upper_left_corner=(-0.5, 0.5), grid_size = GRID_SIZE)
+            dstar = DStarLite(map=map,
+                    s_start=start,
+                    s_goal=goal)
 
+            # SLAM to detect vertices
+            slam = SLAM(map=map,
+                        view_range=view_range)
+            
             # example: update position of obstacles 
             dstar.sensed_map.set_obstacle(pos=new_observation["pos"])
 
-            # example: remove obstacle from a certain spot 
-            dstar.sensed_map.remove_obstacle(pos=new_observation["pos"])
+            # # example: remove obstacle from a certain spot 
+            # dstar.sensed_map.remove_obstacle(pos=new_observation["pos"])
 
             # slam
             new_edges_and_old_costs, slam_map = slam.rescan(global_position=new_position)
