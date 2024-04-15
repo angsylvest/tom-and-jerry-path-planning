@@ -31,6 +31,8 @@ class TomAndJerryEnvironment:
 
 
     def get_node_at_position(self, pos): 
+        # print(f'node: {pos}')
+        # if isinstance()
         for node in self.nodes:
             node_x, node_y = node.position
             if node_x <= pos[0] <= node_x + self.grid_dim and node_y <= pos[1] <= node_y + self.grid_dim:

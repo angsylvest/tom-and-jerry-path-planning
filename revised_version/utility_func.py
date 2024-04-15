@@ -63,7 +63,9 @@ def euclidean_distance(node, goal):
     return math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
 
 def generate_successors(env, pos):
-    if not isinstance(pos, Node): 
+    # print(f'in generate sucessors: {pos} for type {type(pos)}')
+    if not isinstance(pos, Node) and isinstance(pos, tuple): 
+        # print(f'is not a ndoe')
         node = env.get_node_at_position(pos)
     else: 
         node = pos 
@@ -96,6 +98,7 @@ def dynamic_a_star(env, start_pos, goal_pos, obstacle_pos):
             return path
 
         for neighbor in generate_successors(env, current):
+            # print(f'neighbor {neighbor}')
             if neighbor in obstacle_nodes:
                 continue
 

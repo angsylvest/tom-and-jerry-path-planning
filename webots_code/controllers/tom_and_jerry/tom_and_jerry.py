@@ -19,9 +19,10 @@ sys.path.append('../../../')
 from revised_version.tom_and_jerry_generator import * 
 from revised_version.grid_environment import * 
 from revised_version.evolving_waypoint import * 
+from revised_version.utility_func import * 
 
 env = TomAndJerryEnvironment(dims=(1,1), upper_left=(-0.5, 0.5), grid_dim=0.2)
-path_generator = TomAndJerry(env, current_pos=((0, 0)), goal_pos=(0.4, 0.4))
+path_generator = TomAndJerry(env, current_pos=(0, 0), goal_pos=(0.4, 0.4))
 
 # create the Robot instance.
 robot = Robot()
