@@ -62,12 +62,12 @@ GOAL_TOLERANCE = 0.5  # Tolerance for reaching the goal
 # include relevant import statements regarding path generation here.. 
 GRID_SIZE = 0.2
 ENV_LENGTH = 1
-x_dim =  int(ENV_LENGTH // GRID_SIZE)
-y_dim = int(ENV_LENGTH // GRID_SIZE)
+x_dim =  int(ENV_LENGTH // GRID_SIZE) + 1
+y_dim = int(ENV_LENGTH // GRID_SIZE) + 1
 
 # start and goal pos from actual env
 start = (0, 0)
-goal = (1, 1)
+goal = (0.25, 0.25)
 
 # need way to convert cur pos to grid space pos 
 startx, starty = real_to_grid_pos(real_pos=start, env_size=(ENV_LENGTH,ENV_LENGTH), upper_left_corner=(-0.5, 0.5), grid_size = GRID_SIZE)
@@ -82,9 +82,11 @@ map = OccupancyGridMap(x_dim=x_dim,
 obstacles = [(2, 2), (3, 3), (4, 4), (5, 5)]  # Example obstacle positions
 obj_detected = False 
 
-print(f'map: {map.occupancy_grid_map}')
-grid_rep = list(map.occupancy_grid_map)
+print(f'map: {map.occupancy_grid_map} for start {startx, starty} and goal {goalx, goaly}')
+grid_rep = map.occupancy_grid_map.tolist()
+print(grid_rep)
 path = LifelongAStar(grid_rep).lifelong_astar((startx, starty),(goalx, goaly))
+print(f'path generated: {path}')
 example_goal_posex, goal_posey = path[j]
 print(f'path generated: {path}')
 
