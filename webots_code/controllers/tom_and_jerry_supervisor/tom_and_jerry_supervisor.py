@@ -14,7 +14,7 @@ receiver.enable(TIME_STEP)
 receiver.setChannel(1) 
 
 trials = 1
-simulation_time = 600 
+simulation_time = 6000 
 
 obst_def = ["obst-1"]
 
@@ -82,7 +82,7 @@ def set_agent_up(start):
     translation_field.setSFVec3f(new_value)
     
 
-def create_goal_msg(start = (0,0), goal = (0.3,0.3)):
+def create_goal_msg(start = (0,0), goal = (0.12,0.38)):
     # update agent pos here 
     set_agent_up(start)
     

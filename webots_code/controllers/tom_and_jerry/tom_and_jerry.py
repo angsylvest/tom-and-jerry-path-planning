@@ -29,6 +29,7 @@ robot = Robot()
 
 # get the time step of the current world.
 timestep = int(robot.getBasicTimeStep())
+initial_time = robot.getTime()
 
 # import necessary sensors for go-to-task 
 gps = robot.getDevice('gps')
@@ -135,14 +136,14 @@ def message_listener():
             
             start = startx, starty
             goal = goalx, goaly 
-            example_goal_posex, goal_posey = goal
             
             print(f'inputs x and y {startx, starty} for goals {goalx, goaly}')
             
             path_generator = TomAndJerry(env, current_pos=(startx, starty), goal_pos=(goalx, goaly))
             coordinates = path_generator.a_star_path()
-            
             j = 0
+            example_goal_posex, goal_posey = coordinates[j]
+            
             
             print(f'updated path: {coordinates}')
             
@@ -216,14 +217,17 @@ while robot.step(timestep) != -1:
             msg = "obj-detected"
             emitter.send(msg)
     
-        if math.dist([robot_current_posx, robot_current_posy], [example_goal_posex, goal_posey]) > 0.05 and yaw != round(math.atan2(goal_posey-robot_current_posy,example_goal_posex-robot_current_posx),2): 
-         
+        if math.dist([robot_current_posx, robot_current_posy], [example_goal_posex, goal_posey]) > 0.15 and yaw != round(math.atan2(goal_posey-robot_current_posy,example_goal_posex-robot_current_posx),2): 
+            # print(f'large dist: {math.dist([robot_current_posx, robot_current_posy], [example_goal_posex, goal_posey])}')
             chosen_direction = round(math.atan2(goal_posey-robot_current_posy,example_goal_posex-robot_current_posx),2) 
 
         elif math.dist([robot_current_posx, robot_current_posy], [path[-1][0], path[-1][0]]) <= 0.05:
-            print(f'goal successfully reached') 
+            time_to_goal = robot.getTime() - initial_time 
+            print(f'goal successfully reached in time: {time_to_goal}') 
+    
             stop()
             goal_reached = True
+            break 
      
         else: 
             # Emily: here it stops, but you can just update the goal pose here if you have a list
@@ -240,6 +244,7 @@ while robot.step(timestep) != -1:
                 else: 
                     evolving = False 
                     goalx, goaly = goal 
+                    print(f'regenerating a start: {robot_current_posx, robot_current_posy} with goal {goalx, goaly}')
                     path_generator = TomAndJerry(env, current_pos=(robot_current_posx, robot_current_posy), goal_pos=(goalx, goaly))
                     # update to be new path 
                     path = path_generator.a_star_path()

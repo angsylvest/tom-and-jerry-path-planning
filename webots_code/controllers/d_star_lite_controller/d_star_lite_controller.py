@@ -64,6 +64,7 @@ robot = Robot()
 
 # get the time step of the current world.
 timestep = int(robot.getBasicTimeStep())
+initial_time = robot.getTime()
 
 # import necessary sensors for go-to-task 
 gps = robot.getDevice('gps')
@@ -83,6 +84,8 @@ emitter.setChannel(1)
 receiver = robot.getDevice("receiver") 
 receiver.enable(timestep)
 receiver.setChannel(2) 
+ds = robot.getDevice('distance sensor') # front 
+ds.enable(timestep)
  
 coordinates = path
 j = 0
@@ -240,6 +243,10 @@ while robot.step(timestep) != -1:
     yaw = round(yaw, 2)
     robot_current_posx, robot_current_posy  = float(gps.getValues()[0]), float(gps.getValues()[1])
     message_listener()
+    
+    dist_val = ds.getValue()
+    if dist_val < 1000: 
+        obj_detected = True 
 
     if i == 0: 
         print(f'robot is starting from {robot_current_posx, robot_current_posy} to goal pose {example_goal_posex, goal_posey}')
@@ -252,15 +259,16 @@ while robot.step(timestep) != -1:
             msg = "obj-detected"
             emitter.send(msg)
     
-        if math.dist([robot_current_posx, robot_current_posy], [example_goal_posex, goal_posey]) > 0.05 and yaw != round(math.atan2(goal_posey-robot_current_posy,example_goal_posex-robot_current_posx),2): 
+        if math.dist([robot_current_posx, robot_current_posy], [example_goal_posex, goal_posey]) > 0.12 and yaw != round(math.atan2(goal_posey-robot_current_posy,example_goal_posex-robot_current_posx),2): 
          
             chosen_direction = round(math.atan2(goal_posey-robot_current_posy,example_goal_posex-robot_current_posx),2) 
 
-        elif math.dist([robot_current_posx, robot_current_posy], [path[-1][0], path[-1][0]]) <= 0.05:
+        elif math.dist([robot_current_posx, robot_current_posy], [grid_to_real_pos(grid_pos=path[-1])]) <= 0.05:
 
             stop()
             goal_reached = True
-            print(f'goal reached')
+            time_to_goal = robot.getTime() - initial_time 
+            print(f'goal successfully reached in time: {time_to_goal}') 
 
         elif math.dist([robot_current_posx, robot_current_posy], [example_goal_posex, goal_posey]) < 0.05 and j+1 < len(path):
             j += 1 

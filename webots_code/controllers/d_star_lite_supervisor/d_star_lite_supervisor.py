@@ -91,7 +91,7 @@ def find_obstacles(curr_agent, obstacle_poses, range):
     return poses_within_range
 
 
-def create_goal_msg(start = (0,0), goal = (0.3,0.3)):
+def create_goal_msg(start = (0,0), goal = (0.12,0.38)):
     # update agent pos here 
     set_agent_up(start)
     
