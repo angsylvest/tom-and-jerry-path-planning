@@ -80,7 +80,7 @@ def set_agent_up(start):
     translation_field.setSFVec3f(new_value)
     
 
-def create_goal_msg(start = (0,0), goal = (0.23,0.46)):
+def create_goal_msg(start = (0,0), goal = (0.12,0.38)):
     # update agent pos here 
     set_agent_up(start)
     

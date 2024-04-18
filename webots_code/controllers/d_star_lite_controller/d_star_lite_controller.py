@@ -26,9 +26,10 @@ UNOCCUPIED = 0
 # include relevant import statements regarding path generation here.. 
 GRID_SIZE = 0.2
 ENV_LENGTH = 1
-x_dim =  int(ENV_LENGTH // GRID_SIZE) + 1 
-y_dim = int(ENV_LENGTH // GRID_SIZE) + 1
+x_dim =  int(ENV_LENGTH / GRID_SIZE) + 1 
+y_dim = int(ENV_LENGTH / GRID_SIZE) + 1
 
+print(f'x_dim {x_dim} and y_dim {y_dim}')
 # start and goal pos from actual env
 start = (0, 0)
 goal = (0.3, 0.3)
@@ -98,7 +99,6 @@ goal_reached = False
 forward_speed = 5 
 
 # Define the grid parameters
-GRID_SIZE = 100  # Size of the grid (e.g., 100x100)
 STEP_SIZE = 1.0  # Step size for discretization
 OBSTACLE_COST = float('inf')  # Cost for grid cells with obstacles
 GOAL_TOLERANCE = 0.5  # Tolerance for reaching the goal
@@ -141,13 +141,13 @@ def message_listener():
     global goal_posey
     global j 
     global coordinates
-    global j
+    global path
     global chosen_direction
     
 
     if receiver.getQueueLength()>0:
         message = receiver.getString()
-        print(f'current message to taj: {message}')
+        # print(f'current message to taj: {message}')
         
         if 'goal_update' in message: 
             msg = message.split(':')[1].split('|')
@@ -160,12 +160,14 @@ def message_listener():
             start = startx, starty
             goal = goalx, goaly
             
+            print(f'goal input: {goalx, goaly}')
+            
             # need way to convert cur pos to grid space pos 
             startx, starty = real_to_grid_pos(real_pos=(startx, starty), env_size=(ENV_LENGTH,ENV_LENGTH), upper_left_corner=(-0.5, 0.5), grid_size = GRID_SIZE)
             goalx, goaly = real_to_grid_pos(real_pos=(goalx, goaly), env_size=(ENV_LENGTH,ENV_LENGTH), upper_left_corner=(-0.5, 0.5), grid_size = GRID_SIZE)
 
             # example_goal_posex, goal_posey = goal
-            print(f'new map for d* lite looks like: {map.occupancy_grid_map}')
+            print(f'new map for d* lite looks like: {map.occupancy_grid_map} with grid goal {goalx, goaly}')
             dstar = DStarLite(map=map,
                                 s_start=(startx, starty),
                                 s_goal=(goalx, goaly))
@@ -176,14 +178,14 @@ def message_listener():
 
 
             # move and compute path
-            path, g, rhs = dstar.move_and_replan(robot_position=new_position)
+            path, g, rhs = dstar.move_and_replan(robot_position=(startx, starty))
             j = 0 
 
             # example_goal_posex, goal_posey = path[j]
             example_goal_posex, goal_posey = grid_to_real_pos(grid_pos=path[j])
             chosen_direction = round(math.atan2(goal_posey-robot_current_posy,example_goal_posex-robot_current_posx),2) 
             
-            print(f'updated path: {coordinates}')
+            print(f'updated path: {path} with next goal pos {example_goal_posex, goal_posey}')
             
             receiver.nextPacket() 
             
@@ -216,9 +218,11 @@ def message_listener():
             # example: update position of obstacles 
             dstar.sensed_map.set_obstacle(pos=new_observation["pos"])
 
-            # # example: remove obstacle from a certain spot 
+            # # example: remove obstacle from a certain spot  
             # dstar.sensed_map.remove_obstacle(pos=new_observation["pos"])
-
+            
+            new_position = start 
+            
             # slam
             new_edges_and_old_costs, slam_map = slam.rescan(global_position=new_position)
 
@@ -250,9 +254,9 @@ while robot.step(timestep) != -1:
     if dist_val < 1000: 
         obj_detected = True 
 
-    if i == 0: 
-        print(f'robot is starting from {robot_current_posx, robot_current_posy} to goal pose {example_goal_posex, goal_posey}')
-        path = path, g, rhs = dstar.move_and_replan(robot_position=new_position)
+    # if i == 0: 
+        # print(f'robot is starting from {robot_current_posx, robot_current_posy} to goal pose {example_goal_posex, goal_posey}')
+        # path = path, g, rhs = dstar.move_and_replan(robot_position=new_position)
 
     if path:
         # print("Path found:", path)
@@ -272,6 +276,7 @@ while robot.step(timestep) != -1:
             goal_reached = True
             time_to_goal = robot.getTime() - initial_time 
             print(f'goal successfully reached in time: {time_to_goal}') 
+            break
 
         elif math.dist([robot_current_posx, robot_current_posy], [example_goal_posex, goal_posey]) < 0.05 and j+1 < len(path):
             j += 1 

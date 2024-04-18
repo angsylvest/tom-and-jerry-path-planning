@@ -4,7 +4,7 @@ import heapq
 import sys 
 sys.path.append('../')
 from revised_version.node import * 
-
+# from node import * 
 
 # Define the grid parameters
 GRID_SIZE = 100  # Size of the grid (e.g., 100x100)
@@ -14,25 +14,42 @@ GOAL_TOLERANCE = 0.5  # Tolerance for reaching the goal
 
 # translation function used for D* lite .. 
 def real_to_grid_pos(real_pos=(0,0), env_size=(1,1), upper_left_corner=(-0.5, 0.5), grid_size = 0.2):
-    # Calculate the grid dimensions
-    x_dim = int(env_size[0] / grid_size)
-    y_dim = int(env_size[1] / grid_size)
+
+    startx = upper_left_corner[0]
+    starty = upper_left_corner[1]
     
-    # Calculate the position offset based on the upper left corner
-    offset_x = upper_left_corner[0]
-    offset_y = upper_left_corner[1]
+    # create a representation of env 
+    x_index = 0 
+    y_index = 0 
     
-    # Calculate the grid position
-    grid_x = int((real_pos[0] - offset_x) / grid_size)
-    grid_y = int((offset_y - real_pos[1]) / grid_size)  # y-axis is inverted in the grid
+    num_x = int(env_size[0] / grid_size)
+    num_y = int(env_size[1] / grid_size)
     
-    # Ensure the grid position is within bounds
-    grid_x = max(0, min(x_dim - 1, grid_x))
-    grid_y = max(0, min(y_dim - 1, grid_y))
+    # calc what x interval particle belongs to 
+    for i in range(num_x): 
+        left_val = startx 
+        right_val = startx + (0.2*i)
+        
+        if real_pos[0] >= left_val and real_pos[0] <= right_val: 
+            x_index = i
+
+        startx = right_val
+        
+    for j in range(num_y): 
+        left_val = starty 
+        right_val = starty + (0.2*i)
+        
+        if real_pos[1] >= left_val and real_pos[1] <= right_val: 
+            y_index = i
+
+        starty = right_val
+            
+    return x_index, y_index
     
-    return grid_x, grid_y
+
 
 def grid_to_real_pos(grid_pos=(0,0), env_size=(1,1), upper_left_corner=(-0.5, 0.5), grid_size=0.2):
+
     # Calculate the grid dimensions
     x_dim = int(env_size[0] / grid_size)
     y_dim = int(env_size[1] / grid_size)
@@ -43,13 +60,18 @@ def grid_to_real_pos(grid_pos=(0,0), env_size=(1,1), upper_left_corner=(-0.5, 0.
     
     # Calculate the real x and y coordinates
     real_x = grid_pos[0] * grid_size + offset_x
-    real_y = offset_y - grid_pos[1] * grid_size  # y-axis is inverted in the grid
+    real_y = offset_y - grid_pos[1] * grid_size  # Corrected y-axis calculation
     
     # Ensure the real coordinates are within bounds
     real_x = max(offset_x, min(env_size[0] + offset_x, real_x))
     real_y = max(offset_y - env_size[1], min(offset_y, real_y))
     
     return real_x, real_y
+
+# pos_ex = (0.12, 0.38)
+# print(f'pos ex {pos_ex} to grid ex {real_to_grid_pos(pos_ex)}')
+# grid_ex = (2,2)
+# print(f'grid_ex {grid_ex} to real pos {grid_to_real_pos(grid_ex)}')
 
 # Define the heuristic function (Euclidean distance)
 def euclidean_distance(node, goal):
