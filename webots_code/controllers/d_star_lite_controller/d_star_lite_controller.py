@@ -260,6 +260,7 @@ while robot.step(timestep) != -1:
 
     if path:
         # print("Path found:", path)
+        # print(f'dist from goal: {math.dist([robot_current_posx, robot_current_posy], [goal[0], goal[1]])}')
         if obj_detected:
 
             msg = "obj-detected"
