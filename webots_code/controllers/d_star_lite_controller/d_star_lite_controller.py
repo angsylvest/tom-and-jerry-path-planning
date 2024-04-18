@@ -26,12 +26,12 @@ UNOCCUPIED = 0
 # include relevant import statements regarding path generation here.. 
 GRID_SIZE = 0.2
 ENV_LENGTH = 1
-x_dim =  int(ENV_LENGTH // GRID_SIZE)
-y_dim = int(ENV_LENGTH // GRID_SIZE)
+x_dim =  int(ENV_LENGTH // GRID_SIZE) + 1 
+y_dim = int(ENV_LENGTH // GRID_SIZE) + 1
 
 # start and goal pos from actual env
 start = (0, 0)
-goal = (1, 1)
+goal = (0.3, 0.3)
 view_range = 5
 
 # need way to convert cur pos to grid space pos 
@@ -46,10 +46,10 @@ new_position = start
 last_position = start
 
 # D* Lite (optimized)
-print(f'new map for d* lite looks like: {map.occupancy_grid_map}')
+print(f'new map for d* lite looks like: {map.occupancy_grid_map} with start {startx, starty} and goal {goalx, goaly}')
 dstar = DStarLite(map=map,
-                    s_start=start,
-                    s_goal=goal)
+                    s_start=(startx, starty),
+                    s_goal=(goalx, goaly))
 
 # SLAM to detect vertices
 slam = SLAM(map=map,
@@ -58,6 +58,7 @@ slam = SLAM(map=map,
 
 # move and compute path
 path, g, rhs = dstar.move_and_replan(robot_position=new_position)
+print(f'updated path from d star lite: {path}')
 
 # create the Robot instance.
 robot = Robot()
@@ -155,20 +156,19 @@ def message_listener():
             
             goalx = float(msg[2])
             goaly = float(msg[3])
+
+            start = startx, starty
+            goal = goalx, goaly
             
             # need way to convert cur pos to grid space pos 
             startx, starty = real_to_grid_pos(real_pos=(startx, starty), env_size=(ENV_LENGTH,ENV_LENGTH), upper_left_corner=(-0.5, 0.5), grid_size = GRID_SIZE)
             goalx, goaly = real_to_grid_pos(real_pos=(goalx, goaly), env_size=(ENV_LENGTH,ENV_LENGTH), upper_left_corner=(-0.5, 0.5), grid_size = GRID_SIZE)
 
-            start = startx, starty
-            goal = goalx, goaly
-
-            example_goal_posex, goal_posey = goal
-            
+            # example_goal_posex, goal_posey = goal
             print(f'new map for d* lite looks like: {map.occupancy_grid_map}')
             dstar = DStarLite(map=map,
-                                s_start=start,
-                                s_goal=goal)
+                                s_start=(startx, starty),
+                                s_goal=(goalx, goaly))
 
             # SLAM to detect vertices
             slam = SLAM(map=map,
@@ -178,6 +178,7 @@ def message_listener():
             # move and compute path
             path, g, rhs = dstar.move_and_replan(robot_position=new_position)
             j = 0 
+
             # example_goal_posex, goal_posey = path[j]
             example_goal_posex, goal_posey = grid_to_real_pos(grid_pos=path[j])
             chosen_direction = round(math.atan2(goal_posey-robot_current_posy,example_goal_posex-robot_current_posx),2) 
@@ -188,8 +189,6 @@ def message_listener():
             
         elif 'obj-info' in message: 
             # unpack obs info 
-
-            print(f'info from msg: {message}')
             msg = message.split("|")
 
             rob_poses = ast.literal_eval(msg[1].split("=")[1]) # [(0,0), (0,0), (0,0), (0,0), (0,0)]
@@ -200,13 +199,15 @@ def message_listener():
             obsx, obsy = real_to_grid_pos(real_pos=obst_poses[0], env_size=(ENV_LENGTH,ENV_LENGTH), upper_left_corner=(-0.5, 0.5), grid_size = GRID_SIZE)
 
             new_observation = {"pos": (obsx, obsy), "type": 255} 
-            # new_observation = {"pos": (2,2), "type": 255} # 255 for obstacle, 0 for not
-
             startx, starty = (robot_current_posx, robot_current_posy)
+            start = real_to_grid_pos(real_pos=(startx, starty), env_size=(ENV_LENGTH,ENV_LENGTH), upper_left_corner=(-0.5, 0.5), grid_size = GRID_SIZE)
+            goalx, goaly = real_to_grid_pos(real_pos=goal, env_size=(ENV_LENGTH,ENV_LENGTH), upper_left_corner=(-0.5, 0.5), grid_size = GRID_SIZE)
+            
+            # print(f'observation input: {new_observation} with start {startx, starty} ')
 
             dstar = DStarLite(map=map,
                     s_start=start,
-                    s_goal=goal)
+                    s_goal=(goalx, goaly))
 
             # SLAM to detect vertices
             slam = SLAM(map=map,
@@ -226,8 +227,9 @@ def message_listener():
 
             # d star
             path, g, rhs = dstar.move_and_replan(robot_position=new_position)
+            
+            # print(f'path generated after obs detected: {path}')
             j = 0
-            # example_goal_posex, goal_posey = path[j]
             example_goal_posex, goal_posey = grid_to_real_pos(grid_pos=path[j])
 
             receiver.nextPacket()  
@@ -262,8 +264,9 @@ while robot.step(timestep) != -1:
         if math.dist([robot_current_posx, robot_current_posy], [example_goal_posex, goal_posey]) > 0.12 and yaw != round(math.atan2(goal_posey-robot_current_posy,example_goal_posex-robot_current_posx),2): 
          
             chosen_direction = round(math.atan2(goal_posey-robot_current_posy,example_goal_posex-robot_current_posx),2) 
+        
 
-        elif math.dist([robot_current_posx, robot_current_posy], [grid_to_real_pos(grid_pos=path[-1])]) <= 0.05:
+        elif math.dist([robot_current_posx, robot_current_posy], [goal[0], goal[1]]) <= 0.05:
 
             stop()
             goal_reached = True

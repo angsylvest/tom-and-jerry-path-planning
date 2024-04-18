@@ -50,11 +50,12 @@ TinkerbotsBase {
     }
   ]
 }
-E-puck {
+DEF obst-1 E-puck {
   translation -0.379201 0.359201 0
   rotation 0 0 -1 -1.5708053071795867
   name "e-puck(1)"
   controller "obstacle_controller"
+  receiver_channel 2
   turretSlot [
     GPS {
     }

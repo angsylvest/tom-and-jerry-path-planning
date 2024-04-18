@@ -83,7 +83,6 @@ map = OccupancyGridMap(x_dim=x_dim,
                             exploration_setting='4N')
 
 #static obstalces
-obstacles = [(2, 2), (3, 3), (4, 4), (5, 5)]  # Example obstacle positions
 obj_detected = False 
 
 print(f'map: {map.occupancy_grid_map} for start {startx, starty} and goal {goalx, goaly}')
@@ -129,6 +128,7 @@ def message_listener():
     global chosen_direction
     global robot_current_posy
     global robot_current_posx
+    global path 
 
     if receiver.getQueueLength()>0:
         message = receiver.getString()
@@ -141,16 +141,14 @@ def message_listener():
             
             goalx = float(msg[2])
             goaly = float(msg[3])
+            
+            start = startx, starty
+            goal = goalx, goaly
 
             # need way to convert cur pos to grid space pos 
             startx, starty = real_to_grid_pos(real_pos=(startx, starty), env_size=(ENV_LENGTH,ENV_LENGTH), upper_left_corner=(-0.5, 0.5), grid_size = GRID_SIZE)
             goalx, goaly = real_to_grid_pos(real_pos=(goalx, goaly), env_size=(ENV_LENGTH,ENV_LENGTH), upper_left_corner=(-0.5, 0.5), grid_size = GRID_SIZE)
 
-            start = startx, starty
-            goal = goalx, goaly
-
-
-            # example_goal_posex, goal_posey = goal
 
             map = OccupancyGridMap(x_dim=x_dim,
                                         y_dim=y_dim,
@@ -158,12 +156,14 @@ def message_listener():
 
 
             grid_rep = list(map.occupancy_grid_map)
-            path = LifelongAStar(grid_rep).lifelong_astar(start, goal)
+            path = LifelongAStar(grid_rep).lifelong_astar((startx, starty), (goalx, goaly))
+            
+            print(f'path generated from goal: {path}')
+            
+            j = 0 
             example_goal_posex, goal_posey = grid_to_real_pos(grid_pos=path[j])
-            # example_goal_posex, goal_posey = path[j]
 
             chosen_direction = round(math.atan2(goal_posey-robot_current_posy,example_goal_posex-robot_current_posx),2) 
-            goal = grid_to_real_pos(grid_pos=path[-1])
             
             receiver.nextPacket() 
             
@@ -183,30 +183,21 @@ def message_listener():
                                         y_dim=y_dim,
                                         exploration_setting='4N')
 
-            #static obstalces
-            # obstacles = [(2, 2), (3, 3), (4, 4), (5, 5)]  # Example obstacle positions
-            # obj_detected = False 
-
             grid_rep = list(map.occupancy_grid_map)
-            grid_rep[grid_obsx][grid_obsy] = 1
+            grid_rep[grid_obsx][grid_obsy] = 1  # put obs_pose here .. 
 
-            # put obs_pose here .. 
 
             startx, starty = (robot_current_posx, robot_current_posy)
             startx, starty = real_to_grid_pos(real_pos=(startx, starty), env_size=(ENV_LENGTH,ENV_LENGTH), upper_left_corner=(-0.5, 0.5), grid_size = GRID_SIZE)
 
             start = startx, starty 
-            goalx, goaly = goal 
+            goalx, goaly = real_to_grid_pos(real_pos=goal, env_size=(ENV_LENGTH,ENV_LENGTH), upper_left_corner=(-0.5, 0.5), grid_size = GRID_SIZE) 
             
-            goal = real_to_grid_pos(real_pos=(goalx, goaly), env_size=(ENV_LENGTH,ENV_LENGTH), upper_left_corner=(-0.5, 0.5), grid_size = GRID_SIZE)
-            path = LifelongAStar(grid_rep).lifelong_astar(start, goal)
+            path = LifelongAStar(grid_rep).lifelong_astar(start, (goalx, goaly))
             # example_goal_posex, goal_posey = path[j]
-            
-            example_goal_posex, goal_posey = grid_to_real_pos(grid_pos=path[j])
-            goal = grid_to_real_pos(grid_pos=path[-1])
-
             j = 0
-            # example_goal_posex, goal_posey = path[j]
+            example_goal_posex, goal_posey = grid_to_real_pos(grid_pos=path[j])
+            # goal = grid_to_real_pos(grid_pos=path[-1])
 
             receiver.nextPacket()  
             
@@ -241,9 +232,9 @@ while robot.step(timestep) != -1:
     if dist_val < 1000: 
         obj_detected = True 
 
-    if i == 0: 
-        print(f'robot is starting from {robot_current_posx, robot_current_posy} to goal pose {example_goal_posex, goal_posey}')
-        path = LifelongAStar(grid_rep).lifelong_astar(start, goal)
+    # if i == 0: 
+        # print(f'robot is starting from {robot_current_posx, robot_current_posy} to goal pose {example_goal_posex, goal_posey}')
+        # path = LifelongAStar(grid_rep).lifelong_astar(start, goal)
 
     if path:
         # print("Path found:", path)
@@ -252,7 +243,7 @@ while robot.step(timestep) != -1:
             emitter.send(msg)
     
         if math.dist([robot_current_posx, robot_current_posy], [example_goal_posex, goal_posey]) > 0.14 and yaw != round(math.atan2(goal_posey-robot_current_posy,example_goal_posex-robot_current_posx),2): 
-            print(f'dist: {math.dist([robot_current_posx, robot_current_posy], [example_goal_posex, goal_posey])}')
+            # print(f'dist: {math.dist([robot_current_posx, robot_current_posy], [example_goal_posex, goal_posey])}')
             chosen_direction = round(math.atan2(goal_posey-robot_current_posy,example_goal_posex-robot_current_posx),2) 
 
         elif math.dist([robot_current_posx, robot_current_posy], [path[-1][0], path[-1][0]]) <= 0.05:

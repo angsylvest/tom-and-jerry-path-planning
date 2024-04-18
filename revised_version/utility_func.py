@@ -93,7 +93,7 @@ def dynamic_a_star(env, start_pos, goal_pos, obstacle_pos):
             while current in came_from:
                 path.append(current.position)  # Append the position associated with the node
                 current = came_from[current]
-            path.append(start_node.position)
+            path.append(start_node.position) # center position of that node 
             path.reverse()
             return path
 

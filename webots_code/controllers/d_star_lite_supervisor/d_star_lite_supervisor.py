@@ -32,7 +32,6 @@ def message_listener():
 
             obt_node = robot.getFromDef('obst-1')
             obt_x, obt_y, obt_z = obt_node.getField('translation').getSFVec3f()
-            print(f'obstacle pose: {obt_x, obt_y}')
             obt_yaw = obt_node.getField('rotation').getSFVec3f()
 
             msg = "obj-info|"

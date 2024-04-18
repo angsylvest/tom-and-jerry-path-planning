@@ -51,12 +51,8 @@ rightMotor = robot.getDevice('right wheel motor')
 leftMotor.setVelocity(0)
 rightMotor.setVelocity(0)
 
-start = (0, 0)
-goal = (10, 10)
-#static obstalces
-obstacles = [(2, 2), (3, 3), (4, 4), (5, 5)]  # Example obstacle positions
-obj_detected = False 
 
+obj_detected = False 
 coordinates = path_generator.a_star_path()
 j = 0
 
