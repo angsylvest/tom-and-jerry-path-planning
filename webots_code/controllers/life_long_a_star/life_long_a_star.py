@@ -257,10 +257,11 @@ while robot.step(timestep) != -1:
         else: 
             # Emily: here it stops, but you can just update the goal pose here if you have a list
             if j + 1 < len(path):
-                example_goal_posex, goal_posey = grid_to_real_pos(grid_pos=path[j+1])
-                # example_goal_posex, goal_posey = path[j + 1]
-                goal_reached = False
-                j+= 1
+                if math.dist([robot_current_posx, robot_current_posy], [example_goal_posex, goal_posey]) <  0.15: 
+                    example_goal_posex, goal_posey = grid_to_real_pos(grid_pos=path[j+1])
+                    # example_goal_posex, goal_posey = path[j + 1]
+                    goal_reached = False
+                    j+= 1
      
 
         if yaw != chosen_direction and not goal_reached: 
