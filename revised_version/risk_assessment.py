@@ -86,9 +86,12 @@ class ObstacleAssessment():
         t1 = (-b - math.sqrt(discriminant)) / (2 * a)
         t2 = (-b + math.sqrt(discriminant)) / (2 * a)
 
-        # Return the smallest positive time to collision
-        return min(t for t in (t1, t2) if t >= 0)
-    
+        # Gather valid times
+        valid_times = [t for t in (t1, t2) if t >= 0]
+
+        # Return the smallest positive time to collision, or infinity if no valid times
+        return min(valid_times) if valid_times else math.inf
+
 
     def calc_goal_orientation(self, pos1, pos2): 
         x1, y1 = pos1
@@ -121,6 +124,7 @@ class ObstacleAssessment():
                     self.counts[rang] += 1
                     collide = 'yes'
                     num_collide += 1
+                    print(f'yes: {collision_time}')
 
             self.x_train.append(self.counts)
             self.y_train.append(collide)

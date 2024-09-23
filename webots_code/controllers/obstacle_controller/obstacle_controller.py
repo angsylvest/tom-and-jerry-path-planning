@@ -10,6 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from math import sqrt
 import numpy as np
+import random 
 
 import sys 
 sys.path.append('../../../')
@@ -28,7 +29,7 @@ inertia.enable(timestep)
 camera = robot.getDevice("camera")
 
 # set up sensors that robot will use 
-motor = robot.getDevice('motor')
+# motor = robot.getDevice('motor')
 leftMotor = robot.getDevice('left wheel motor')
 rightMotor = robot.getDevice('right wheel motor')
 leftMotor.setVelocity(0)
@@ -48,8 +49,8 @@ STEP_SIZE = 1.0  # Step size for discretization
 OBSTACLE_COST = float('inf')  # Cost for grid cells with obstacles
 GOAL_TOLERANCE = 0.5  # Tolerance for reaching the goal
  
-type_of_obstacle = ["static", "single_dyn", "multi_dyn"]
-type_index = 0
+type_of_obstacle = ["static", "single_dyn", "multi_dyn", "crw"]
+type_index = 3
 
 # Initialize an empty list to store the coordinates
 coordinates = []
@@ -97,22 +98,50 @@ def stop():
     leftMotor.setVelocity(0)
     rightMotor.setPosition(float('inf'))
     rightMotor.setVelocity(0)
+    
+def random_dir(): 
+    return round(random.choice([pi,pi, pi/2, -pi/2]),2)
 
 i = 0 
 j = 0 
+forward_state = False 
+forward_elapsed = 0 
+
 while robot.step(timestep) != -1:
     roll, pitch, yaw = inertia.getRollPitchYaw()
     yaw = round(yaw, 2)
     robot_current_posx, robot_current_posy  = float(gps.getValues()[0]), float(gps.getValues()[1])
 
     if i == 0: 
-        chosen_direction = round(math.atan2(goal_posey-robot_current_posy,example_goal_posex-robot_current_posx),2) 
+        if type_index == 3: 
+            chosen_direction = random_dir()
+        else: 
+            chosen_direction = round(math.atan2(goal_posey-robot_current_posy,example_goal_posex-robot_current_posx),2) 
+
+    if type_index == 3: 
+
+        if yaw != chosen_direction and not goal_reached: 
+            begin_rotating()
+            forward_state = False 
+
+        elif forward_state: 
+            if forward_elapsed > 100: 
+                forward_elapsed = 0 
+                forward_state = False 
+            else: 
+                forward_elapsed += 1 
+                    
+        elif yaw == chosen_direction and not goal_reached: 
+            move_forward() 
+            forward_state = True
+            forward_elapsed = 0 
+
+
 
     if path:
         # print("Path found:", path)
     
-        if math.dist([robot_current_posx, robot_current_posy], [example_goal_posex, goal_posey]) > 0.05 and yaw != round(math.atan2(goal_posey-robot_current_posy,example_goal_posex-robot_current_posx),2): 
-         
+        if math.dist([robot_current_posx, robot_current_posy], [example_goal_posex, goal_posey]) > 0.05 and yaw != round(math.atan2(goal_posey-robot_current_posy,example_goal_posex-robot_current_posx),2):  
             chosen_direction = round(math.atan2(goal_posey-robot_current_posy,example_goal_posex-robot_current_posx),2) 
 
         elif math.dist([robot_current_posx, robot_current_posy], [path[-1][0], path[-1][0]]) <= 0.05:

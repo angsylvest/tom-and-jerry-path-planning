@@ -37,6 +37,7 @@ def message_listener():
 
             msg = "obj-info|"
 
+            # include more prior knowledge .. (depending on if dynamic or static obst)
             rob_poses = [(round(curr_x,2), round(curr_y,2))]
             obst_poses = [(round(obt_x,2), round(obt_y,2))]
             obs_orient = [round(obt_yaw[2],2)]

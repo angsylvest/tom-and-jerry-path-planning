@@ -1,0 +1,65 @@
+#VRML_SIM R2023b utf8
+
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/objects/backgrounds/protos/TexturedBackground.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/objects/backgrounds/protos/TexturedBackgroundLight.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/objects/floors/protos/RectangleArena.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/robots/gctronic/e-puck/protos/E-puck.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/robots/kinematics/tinkerbots/protos/TinkerbotsBase.proto"
+
+WorldInfo {
+}
+Viewpoint {
+  orientation -0.5135325820533131 0.4150818910305051 0.7509935491788178 2.0504696590612026
+  position 0.3317574399849994 -1.1709140101803213 3.0482568839798954
+}
+TexturedBackground {
+}
+TexturedBackgroundLight {
+}
+RectangleArena {
+}
+DEF main-e-puck E-puck {
+  translation 0.12517 -0.400697 0
+  rotation 0 0 1 0.785399
+  controller "life_long_a_star"
+  receiver_channel 2
+  turretSlot [
+    DistanceSensor {
+    }
+    Camera {
+      name "camera(1)"
+      recognition Recognition {
+      }
+    }
+    GPS {
+    }
+    InertialUnit {
+    }
+  ]
+}
+TinkerbotsBase {
+  translation 0 0.75 0.02
+  controller "lifelong_a_supervisor"
+  supervisor TRUE
+  extensionSlot [
+    Emitter {
+      channel 2
+    }
+    Receiver {
+      channel 1
+    }
+  ]
+}
+DEF obst-1 E-puck {
+  translation -0.379201 0.359201 0
+  rotation 0 0 -1 -1.5708053071795867
+  name "e-puck(1)"
+  controller "obstacle_controller"
+  receiver_channel 2
+  turretSlot [
+    GPS {
+    }
+    InertialUnit {
+    }
+  ]
+}

@@ -52,6 +52,7 @@ class TomAndJerry:
         predicted_class = model.predict(x_test)
         print("Predicted class for test data:", predicted_class)
 
+        print(f'specific class probs: {class_probabilities}')
         specific_class_probability = class_probabilities[0][self.class_index]
         print(f"Probability for class {model.classes_[self.class_index]}:", specific_class_probability)
 
@@ -219,14 +220,15 @@ class TomAndJerry:
         for i in range(8):
 
             #maximum amount of risk potential in e-puck robot (caluclations of speed potential, etc)
-            max_risk = 2.3
+            max_risk = 1.0 # 2.3
 
             probability = prob
+            print(f'Probability: {probability}')
             severity = (0.3304 * self.obstacle_velocity) + (0.2957 * self.size) + (0.3739 * self.distance_refuge)
-            # print("Severity Value:", severity)
+            print("Severity Value:", severity)
 
             total_risk = probability * severity
-            # print("Total Risk:", total_risk)    
+            print("Total Risk:", total_risk)    
 
             #calculate c, B, and find optimized radius
             c = (max_risk - total_risk) / 10
@@ -238,7 +240,7 @@ class TomAndJerry:
             result = self.is_isolated_or_clustered(line1_points, current_node) # TODO: what is this? 
             #b is equal to Benefit
             B = result[1] + proximity_value
-            # print(B)
+            print(f'benefit: {B}')
 
             optimized_radius = self.find_maximum_d(c, F, B, w, n, f, m)
             # print("Optimized Radius:", optimized_radius)
@@ -314,6 +316,7 @@ class TomAndJerry:
 
         # Append the last point in the original path
         new_path.append(original_path[-1])
+        new_path = new_path[::2] 
 
         return np.array(new_path), np.array(curve_points)
             
@@ -339,9 +342,9 @@ def main():
     print(f'a* path: {curr_path}')
 
     rob_poses = [(0,0), (0,0), (0,0), (0,0), (0,0), (0,0)]
-    obst_poses =[(1,0), (1,0), (1,0), (1,0), (0.5,0.5), (0,0)]
+    obst_poses =[(1,0), (1,0), (1,0), (1,0), (0.5,0.5), (0,0.5)]
     obs_orient = [0.785398, 1.5708, 2.35619, 3.14159, 3.92699, 3.92699]
-    risk_assessment = ObstacleAssessment(robot_poses=rob_poses, robot_goal=goal_pos, obstacle_poses=obst_poses, obs_orient=obs_orient, curr_path = curr_path)
+    risk_assessment = ObstacleAssessment(robot_poses=rob_poses, robot_goal=goal_pos, obstacle_poses=obst_poses, obs_orient=obs_orient, curr_path = curr_path, obstacle_vel=10)
     # calc prob of collision given info about robot goals, and obstacle behavior (limited view)
     x_train, y_train, prob = risk_assessment.update_counts()
     # print(f'updated counts given obs info: {risk_assessment.update_counts()}')
@@ -359,10 +362,9 @@ def main():
     #                 [0, 3, 4, 0, 2]])
     # y_train = np.array(['yes', 'no', 'yes', 'yes', 'no'])
     # X_test = np.array([[0, 3, 4, 0, 2]])
-
     obs_pose = (3,3)
     sector, dist, other, optim_rad = path_generator.calc_fid(curr_path, obst_poses[-1], obs_orient, prob, start_pos, obs_pose) # inputs: current path, 
-    print(f'calc fid output: {optim_rad}')
+    print(f'calc fid output radius: {optim_rad}')
 
     # # create path based on location of obstacle and other info ..
     # # TODO: where is this info? 
@@ -372,9 +374,9 @@ def main():
     # tangent_start, tangent_end, marked_coordinates = get_circle_paths_and_coordinates(obs_pose, radius, start_pos, goal_pos) # FID radius, center is where obstacle is 
     # print(f'evolving waypoint generated around obstacle: {tangent_start, tangent_end, marked_coordinates}')
 
-    print(f'currpath: {curr_path}, and others {obs_pose[-1], optim_rad}')
+    # print(f'currpath: {curr_path}, and others {obs_pose[-1], optim_rad}')
     marked_coordinates, curve_points = path_generator.better_generate_waypoints(curr_path, obst_poses[-1], optim_rad)
-    print(f'curve points: {curve_points}')
+    # print(f'curve points: {curve_points}')
     render_results(curr_path, obst_poses[-1], marked_coordinates, curve_points)
 
 

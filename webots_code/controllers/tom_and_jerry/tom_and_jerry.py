@@ -156,7 +156,7 @@ def message_listener():
             rob_poses = ast.literal_eval(msg[1].split("=")[1]) # [(0,0), (0,0), (0,0), (0,0), (0,0)]
             obst_poses = ast.literal_eval(msg[2].split("=")[1]) # [(1,0), (1,0), (1,0), (1,0), (1,0)]
             obs_orient = ast.literal_eval(msg[3].split("=")[1])  #[0.785398, 1.5708, 2.35619, 3.14159, 3.92699]
-            risk_assessment = ObstacleAssessment(robot_poses=rob_poses, robot_goal=goal, obstacle_poses=obst_poses, obs_orient=obs_orient, curr_path=coordinates)
+            risk_assessment = ObstacleAssessment(robot_poses=rob_poses, robot_goal=goal, obstacle_poses=obst_poses, obs_orient=obs_orient, curr_path=coordinates, obstacle_vel=0)
             
             x_train, y_train, prob = risk_assessment.update_counts()
             curr_pose = float(gps.getValues()[0]), float(gps.getValues()[1])
@@ -190,14 +190,24 @@ result = gen_grid((-0.379201, 0.359201), 4, 4, 1)
 evolving_waypoint_index = 0 
 evolving = False 
 path_index = 0 
+delayed = False
+time_since_delay = 0 
 
 i = 0 
 while robot.step(timestep) != -1:
     message_listener()
     
     dist_val = ds.getValue()
-    if dist_val < 700: 
-        obj_detected = True 
+    if dist_val < 500:  
+        if not delayed: 
+            obj_detected = True 
+            delayed = True
+            print('obj detected..')
+        elif time_since_delay > 100: 
+            time_since_delay = 0 
+            delayed = False 
+            obj_detected = False
+
     
     roll, pitch, yaw = inertia.getRollPitchYaw()
     yaw = round(yaw, 2)
@@ -241,6 +251,9 @@ while robot.step(timestep) != -1:
                     print('moving onto next pos')
                 
             elif evolving: 
+                if not obj_detected: 
+                    evolving_waypoint_index = len(marked_coordinates) + 1 
+
                 if evolving_waypoint_index + 1 < len(marked_coordinates): 
                     if math.dist([robot_current_posx, robot_current_posy], [example_goal_posex, goal_posey]) < 0.15:
                         # example_goal_posex, goal_posey = coordinates[evolving_waypoint_index + 1]

@@ -17,6 +17,8 @@ trials = 1
 simulation_time = 600 
 other_obstacle_ids = []
 
+obst_def = ["obst-1"]
+
 def message_listener(time_step):
 
     if receiver.getQueueLength()>0:
