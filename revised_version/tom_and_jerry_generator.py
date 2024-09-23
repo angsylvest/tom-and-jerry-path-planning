@@ -252,6 +252,72 @@ class TomAndJerry:
         # print("Distance:", distance)
         return sector_dict, distance, after_intersection, optimized_radius
     
+
+
+    def distance(self, point1, point2):
+        print(type(point2))
+        x1, y1 = point1 
+        x2, y2 = point2
+        return np.sqrt((x1 - x2)**2 + (y1 - y2)**2)
+
+    def find_tangent_point(self, center, radius, point):
+        # Calculate the direction from the center to the point
+        direction = np.array(point) - np.array(center)
+        direction = direction / np.linalg.norm(direction)  # Normalize
+        # Calculate the tangent point
+        tangent_point = np.array(center) + direction * radius
+        return tangent_point
+
+    def better_generate_waypoints(self, original_path, obstacle_position, radius):
+        new_path = []
+        obstacle_radius = radius
+        obstacle_center = obstacle_position# np.array(obstacle_position)
+        curve_points = []
+
+        print(f'original path: {original_path}')
+
+        for i in range(len(original_path) - 1):
+            start = original_path[i] # np.array(original_path[i])
+            end = original_path[i+1] # np.array(original_path[i + 1])
+
+            print(type(start), type(end), (obstacle_center))
+
+            # Check distance from both start and end to the obstacle
+            if self.distance(start, obstacle_center) < obstacle_radius or self.distance(end, obstacle_center) < obstacle_radius:
+                # If either point is inside the obstacle's clearance zone
+                tangent_start = self.find_tangent_point(obstacle_center, obstacle_radius, start)
+                tangent_end = self.find_tangent_point(obstacle_center, obstacle_radius, end)
+
+                # Calculate points to navigate around the obstacle
+                curve_center = obstacle_center
+                curve_radius = obstacle_radius
+                
+                # Append the start point to the new path
+                new_path.append(start)
+
+                # Generate curve points (simplified circular arc for this example)
+                curve_angle_start = np.arctan2(tangent_start[1] - curve_center[1], tangent_start[0] - curve_center[0])
+                curve_angle_end = np.arctan2(tangent_end[1] - curve_center[1], tangent_end[0] - curve_center[0])
+                num_curve_points = 50
+                curve_angles = np.linspace(curve_angle_start, curve_angle_end, num_curve_points)
+
+                for angle in curve_angles:
+                    curve_point = curve_center + np.array([curve_radius * np.cos(angle), curve_radius * np.sin(angle)])
+                    new_path.append(curve_point)
+                    curve_points.append(curve_point)
+
+                # Append the end tangent point to the new path
+                new_path.append(tangent_end)
+            else:
+                # No need to modify the path segment
+                new_path.append(start)
+
+        # Append the last point in the original path
+        new_path.append(original_path[-1])
+
+        return np.array(new_path), np.array(curve_points)
+            
+        
     def generate_waypoints(self, obs_pose, dist, start_pos, goal_pos ): 
         tangent_start, tangent_end, marked_coordinates = get_circle_paths_and_coordinates(obs_pose, dist, start_pos, goal_pos) # FID radius, center is where obstacle is 
         return tangent_start, tangent_end, marked_coordinates
@@ -272,12 +338,13 @@ def main():
     curr_path = path_generator.a_star_path()
     print(f'a* path: {curr_path}')
 
-    rob_poses = [(0,0), (0,0), (0,0), (0,0), (0,0)]
-    obst_poses =[(1,0), (1,0), (1,0), (1,0), (1,0)]
-    obs_orient = [0.785398, 1.5708, 2.35619, 3.14159, 3.92699]
-    risk_assessment = ObstacleAssessment(robot_poses=rob_poses, robot_goal=goal_pos, obstacle_poses=obst_poses, obs_orient=obs_orient)
+    rob_poses = [(0,0), (0,0), (0,0), (0,0), (0,0), (0,0)]
+    obst_poses =[(1,0), (1,0), (1,0), (1,0), (0.5,0.5), (0,0)]
+    obs_orient = [0.785398, 1.5708, 2.35619, 3.14159, 3.92699, 3.92699]
+    risk_assessment = ObstacleAssessment(robot_poses=rob_poses, robot_goal=goal_pos, obstacle_poses=obst_poses, obs_orient=obs_orient, curr_path = curr_path)
+    # calc prob of collision given info about robot goals, and obstacle behavior (limited view)
     x_train, y_train, prob = risk_assessment.update_counts()
-    print(f'updated counts given obs info: {risk_assessment.update_counts()}')
+    # print(f'updated counts given obs info: {risk_assessment.update_counts()}')
 
     # calculate probability using given info 
 
@@ -294,14 +361,62 @@ def main():
     # X_test = np.array([[0, 3, 4, 0, 2]])
 
     obs_pose = (3,3)
-    sector, dist, other = path_generator.calc_fid(curr_path, (0.2, 0.4), obs_orient, prob, start_pos, obs_pose) # inputs: current path, 
-    print(f'calc fid output: {sector, dist}')
+    sector, dist, other, optim_rad = path_generator.calc_fid(curr_path, obst_poses[-1], obs_orient, prob, start_pos, obs_pose) # inputs: current path, 
+    print(f'calc fid output: {optim_rad}')
 
-    # create path based on location of obstacle and other info ..
-    # TODO: where is this info? 
-    radius = 0.35 # radius of e-puck robot
-    tangent_start, tangent_end, marked_coordinates = get_circle_paths_and_coordinates(obs_pose, radius, start_pos, goal_pos) # FID radius, center is where obstacle is 
-    print(f'evolving waypoint generated around obstacle: {marked_coordinates}')
+    # # create path based on location of obstacle and other info ..
+    # # TODO: where is this info? 
+    radius = optim_rad # 0.35 # radius of e-puck robot
+
+    # will re-do circular path, bc this doesn't make any sense .. 
+    # tangent_start, tangent_end, marked_coordinates = get_circle_paths_and_coordinates(obs_pose, radius, start_pos, goal_pos) # FID radius, center is where obstacle is 
+    # print(f'evolving waypoint generated around obstacle: {tangent_start, tangent_end, marked_coordinates}')
+
+    print(f'currpath: {curr_path}, and others {obs_pose[-1], optim_rad}')
+    marked_coordinates, curve_points = path_generator.better_generate_waypoints(curr_path, obst_poses[-1], optim_rad)
+    print(f'curve points: {curve_points}')
+    render_results(curr_path, obst_poses[-1], marked_coordinates, curve_points)
 
 
-# main()
+def render_results(rob_path, intersec, waypoints, curve_points):
+    # Unpack robot path coordinates
+    rob_x, rob_y = zip(*rob_path)
+    
+    # Unpack intersection point coordinates
+    intersec_x, intersec_y = intersec
+    
+    # Unpack waypoint coordinates
+    waypoints_x, waypoints_y = zip(*waypoints)
+
+    # unpack circular points
+    circ_x, circ_y = zip(*curve_points)
+
+    # Create the plot
+    plt.figure(figsize=(10, 6))
+
+    # Plot the robot path
+    plt.plot(rob_x, rob_y, label='Robot Path', color='blue', linewidth=2)
+
+    # Plot the intersection point
+    plt.scatter(intersec_x, intersec_y, color='red', s=100, label='Intersection Point', edgecolor='black')
+
+    # Plot the waypoints
+    plt.scatter(waypoints_x, waypoints_y, color='green', label='Waypoints', s=50)
+
+    # Plot the waypoints
+    plt.scatter(circ_x, circ_y, color='blue', label='circl', s=50)
+
+    # Add labels and title
+    plt.xlabel('X Coordinate')
+    plt.ylabel('Y Coordinate')
+    plt.title('Robot Path, Intersection, and Waypoints')
+    plt.axhline(0, color='gray', linewidth=0.5, linestyle='--')
+    plt.axvline(0, color='gray', linewidth=0.5, linestyle='--')
+    plt.grid()
+    plt.legend()
+    plt.axis('equal')  # Keep the aspect ratio square
+
+    # Show the plot
+    plt.show()
+
+main()

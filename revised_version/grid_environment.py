@@ -7,7 +7,8 @@ class TomAndJerryEnvironment:
         self.dims = dims
         self.upper_left = upper_left
         self.nodes = self.create_nodes()
-        # print(self.nodes)
+        # for n in self.nodes: 
+        #     print(n)
 
     def create_nodes(self):
         nodes = []

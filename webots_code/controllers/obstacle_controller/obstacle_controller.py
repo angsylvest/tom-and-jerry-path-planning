@@ -49,7 +49,7 @@ OBSTACLE_COST = float('inf')  # Cost for grid cells with obstacles
 GOAL_TOLERANCE = 0.5  # Tolerance for reaching the goal
  
 type_of_obstacle = ["static", "single_dyn", "multi_dyn"]
-type_index = 2
+type_index = 0
 
 # Initialize an empty list to store the coordinates
 coordinates = []

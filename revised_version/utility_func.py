@@ -3,8 +3,8 @@ import heapq
 
 import sys 
 sys.path.append('../')
-from revised_version.node import * 
-# from node import * 
+# from revised_version.node import * 
+from node import * 
 
 # Define the grid parameters
 GRID_SIZE = 100  # Size of the grid (e.g., 100x100)

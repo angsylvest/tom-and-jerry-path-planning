@@ -16,6 +16,9 @@ class Node:
     def get_neighbors(self):
         return self.neighbors
     
+    def __str__(self):
+        return str(self.position)
+    
     def __lt__(self, other):
         # Define how nodes should be compared based on their positions
         return self.position < other.position
