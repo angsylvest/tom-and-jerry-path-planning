@@ -59,7 +59,9 @@ j = 0
 # example of a goal pose (if you are using a cell, would need to find pos within that cell) 
  #change to first index of the route list
 goal_reached = False 
-forward_speed = 5 
+forward_speed = 3 
+moving_forward = False 
+time_forward = 0 
 
 # Define the grid parameters
 GRID_SIZE = 100  # Size of the grid (e.g., 100x100)
@@ -71,9 +73,9 @@ GOAL_TOLERANCE = 0.5  # Tolerance for reaching the goal
 # function to help with movement 
 def begin_rotating():
     leftMotor.setPosition(float('inf'))
-    leftMotor.setVelocity(-0.2)
+    leftMotor.setVelocity(-0.1)
     rightMotor.setPosition(float('inf'))
-    rightMotor.setVelocity(0.2)
+    rightMotor.setVelocity(0.1)
     
 def move_forward():
     leftMotor.setPosition(float('inf'))
@@ -154,7 +156,7 @@ def message_listener():
             rob_poses = ast.literal_eval(msg[1].split("=")[1]) # [(0,0), (0,0), (0,0), (0,0), (0,0)]
             obst_poses = ast.literal_eval(msg[2].split("=")[1]) # [(1,0), (1,0), (1,0), (1,0), (1,0)]
             obs_orient = ast.literal_eval(msg[3].split("=")[1])  #[0.785398, 1.5708, 2.35619, 3.14159, 3.92699]
-            risk_assessment = ObstacleAssessment(robot_poses=rob_poses, robot_goal=goal, obstacle_poses=obst_poses, obs_orient=obs_orient)
+            risk_assessment = ObstacleAssessment(robot_poses=rob_poses, robot_goal=goal, obstacle_poses=obst_poses, obs_orient=obs_orient, curr_path=coordinates)
             
             x_train, y_train, prob = risk_assessment.update_counts()
             curr_pose = float(gps.getValues()[0]), float(gps.getValues()[1])
@@ -165,7 +167,9 @@ def message_listener():
             obs_pose = obst_poses[-1] # just example, can be changed .. 
             sector_dict, dist, ait, opt_rad = path_generator.calc_fid(path, obs_pose, obs_orient, prob, curr_pose, obs_pose) # inputs: current path, 
             print(f'obs pose: {obs_pose} for optimized radius: {opt_rad} and curr_pose for agent {curr_pose} and goal: {goal}')
-            tangent_start, tangent_end, marked_coordinates = get_circle_paths_and_coordinates(obs_pose, opt_rad, curr_pose, goal) # FID radius, center is where obstacle is 
+            # tangent_start, tangent_end, marked_coordinates = get_circle_paths_and_coordinates(obs_pose, opt_rad, curr_pose, goal) # FID radius, center is where obstacle is 
+            marked_coordinates, curve_points = path_generator.better_generate_waypoints(coordinates, obst_poses[-1], opt_rad)
+            print(f'updated marked coords: {marked_coordinates}')
             currx, curry = marked_coordinates[evolving_waypoint_index]
             currx = round(currx, 2)
             curry = round(curry, 2)
@@ -192,7 +196,7 @@ while robot.step(timestep) != -1:
     message_listener()
     
     dist_val = ds.getValue()
-    if dist_val < 1000: 
+    if dist_val < 700: 
         obj_detected = True 
     
     roll, pitch, yaw = inertia.getRollPitchYaw()
@@ -213,11 +217,12 @@ while robot.step(timestep) != -1:
             msg = "obj-detected"
             emitter.send(msg)
     
-        if math.dist([robot_current_posx, robot_current_posy], [example_goal_posex, goal_posey]) > 0.15 and yaw != round(math.atan2(goal_posey-robot_current_posy,example_goal_posex-robot_current_posx),2): 
+        if math.dist([robot_current_posx, robot_current_posy], [example_goal_posex, goal_posey]) > 0.18 and yaw != round(math.atan2(goal_posey-robot_current_posy,example_goal_posex-robot_current_posx),2): 
             # print(f'large dist: {math.dist([robot_current_posx, robot_current_posy], [example_goal_posex, goal_posey])}')
             chosen_direction = round(math.atan2(goal_posey-robot_current_posy,example_goal_posex-robot_current_posx),2) 
 
-        elif math.dist([robot_current_posx, robot_current_posy], [path[-1][0], path[-1][0]]) <= 0.05:
+
+        elif math.dist([robot_current_posx, robot_current_posy], [path[-1][0], path[-1][0]]) <= 0.03:
             time_to_goal = robot.getTime() - initial_time 
             print(f'goal successfully reached in time: {time_to_goal}') 
     
@@ -228,15 +233,26 @@ while robot.step(timestep) != -1:
         else: 
             # Emily: here it stops, but you can just update the goal pose here if you have a list
             if j + 1 < len(coordinates) and not evolving:
-                example_goal_posex, goal_posey = coordinates[j + 1]
-                chosen_direction = round(math.atan2(goal_posey-robot_current_posy,example_goal_posex-robot_current_posx),2) 
-                goal_reached = False
-                j+= 1
+                if math.dist([robot_current_posx, robot_current_posy], [example_goal_posex, goal_posey]) < 0.15:
+                    example_goal_posex, goal_posey = coordinates[j + 1]
+                    chosen_direction = round(math.atan2(goal_posey-robot_current_posy,example_goal_posex-robot_current_posx),2) 
+                    goal_reached = False
+                    j+= 1
+                    print('moving onto next pos')
                 
             elif evolving: 
                 if evolving_waypoint_index + 1 < len(marked_coordinates): 
-                    example_goal_posex, goal_posey = marked_coordinates[evolving_waypoint_index]
-                    evolving_waypoint_index += 1 
+                    if math.dist([robot_current_posx, robot_current_posy], [example_goal_posex, goal_posey]) < 0.15:
+                        # example_goal_posex, goal_posey = coordinates[evolving_waypoint_index + 1]
+                        example_goal_posex, goal_posey = marked_coordinates[evolving_waypoint_index + 1]
+                        chosen_direction = round(math.atan2(goal_posey-robot_current_posy,example_goal_posex-robot_current_posx),2) 
+                        goal_reached = False
+                        # j+= 1
+                        print('moving onto next pos')
+                
+                        # example_goal_posex, goal_posey = marked_coordinates[evolving_waypoint_index]
+                        evolving_waypoint_index += 1 
+                        print(f'updated pos bc of evolving waypoint: {evolving_waypoint_index, len(marked_coordinates)}')
                 else: 
                     evolving = False 
                     goalx, goaly = goal 
@@ -248,13 +264,27 @@ while robot.step(timestep) != -1:
                     example_goal_posex, goal_posey = path[0]
                     chosen_direction = round(math.atan2(goal_posey-robot_current_posy,example_goal_posex-robot_current_posx),2) 
                     obj_detected = False 
-  
-        if yaw != chosen_direction and not goal_reached: 
+
+        # print(f' mvoing forward: {moving_forward} and time forward amount : {time_forward}')
+        if moving_forward:  
+            if time_forward > 100: 
+                print('able to to change to rotating state')
+                time_forward = 0 
+                moving_forward = False 
+            else: 
+                time_forward += 1
+
+        if yaw != chosen_direction and not goal_reached and not moving_forward: 
+            stop()
             begin_rotating()
                     
         elif yaw == chosen_direction and not goal_reached: 
+            stop()
             move_forward() 
             
+
+        # print(f'dist from goal: {example_goal_posex, goal_posey}: {math.dist([robot_current_posx, robot_current_posy], [path[-1][0], path[-1][0]])} with chosen direction: {chosen_direction} and curr orientation: {yaw}')
+        
     else:
         print("No path found.")
     

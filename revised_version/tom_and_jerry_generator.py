@@ -298,7 +298,7 @@ class TomAndJerry:
                 # Generate curve points (simplified circular arc for this example)
                 curve_angle_start = np.arctan2(tangent_start[1] - curve_center[1], tangent_start[0] - curve_center[0])
                 curve_angle_end = np.arctan2(tangent_end[1] - curve_center[1], tangent_end[0] - curve_center[0])
-                num_curve_points = 50
+                num_curve_points = 10
                 curve_angles = np.linspace(curve_angle_start, curve_angle_end, num_curve_points)
 
                 for angle in curve_angles:
@@ -419,4 +419,4 @@ def render_results(rob_path, intersec, waypoints, curve_points):
     # Show the plot
     plt.show()
 
-main()
+# main()
